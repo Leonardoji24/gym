@@ -1,6 +1,6 @@
 /* Sidebar */
 .admin-sidebar {
-  width: 230px;
+  width: 56px;
   background: #363d44;
   color: #d1d5db;
   height: 100vh;
@@ -10,7 +10,86 @@
   display: flex;
   flex-direction: column;
   z-index: 100;
+  overflow-x: hidden;
+  overflow-y: auto;
+  transition: width 0.25s;
+  scrollbar-width:firefox-none; /* Firefox */
 }
+.admin-sidebar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+.admin-sidebar.open {
+  width: 230px;
+}
+.admin-sidebar .logo {
+  opacity: 0;
+  transition: opacity 0.18s;
+  pointer-events: none;
+  height: 0;
+}
+.admin-sidebar.open .logo {
+  opacity: 1;
+  pointer-events: auto;
+  height: auto;
+}
+.logo-collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+.logo-collapsed .logo-circle {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.admin-sidebar nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  pointer-events: auto;
+  transition: none;
+}
+.admin-sidebar nav a {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 13px 0;
+  color: #d1d5db;
+  text-decoration: none;
+  font-size: 1.08rem;
+  transition: background 0.15s;
+  border-left: 4px solid transparent;
+  width: 100%;
+  justify-content: center;
+}
+.admin-sidebar.open nav a {
+  justify-content: flex-start;
+  gap: 14px;
+  padding-left: 24px;
+}
+.admin-sidebar nav a span:not(.card-icon):not(.logo-circle) {
+  display: none;
+}
+.admin-sidebar.open nav a span:not(.card-icon):not(.logo-circle) {
+  display: inline;
+  margin-left: 14px;
+}
+
+.admin-sidebar .logout-btn {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s;
+}
+.admin-sidebar.open .logout-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .admin-sidebar .logo {
   display: flex;
   align-items: center;
@@ -211,6 +290,10 @@
     align-items: center;
   }
   .admin-burger {
+  display: none;
+}
+@media (max-width: 900px) {
+  .admin-burger {
     display: inline-flex;
     flex-direction: column;
     justify-content: center;
@@ -222,6 +305,7 @@
     cursor: pointer;
     z-index: 1101;
   }
+}
   .admin-burger span {
     display: block;
     height: 4px;

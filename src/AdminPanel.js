@@ -1,46 +1,49 @@
 import React, { useState } from 'react';
+import Sidebar from './Sidebar';
 import './AdminPanel.css';
+import './Sidebar.css';
 
 const AdminPanel = ({ onLogout }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarHover, setSidebarHover] = useState(false);
 
   // Cierra el sidebar al hacer clic en un enlace o fondo oscuro
   const closeSidebar = () => setSidebarOpen(false);
+
+  // Sidebar en escritorio: hover para mostrar/ocultar
+  const handleSidebarMouseEnter = () => {
+    if (window.innerWidth > 900) setSidebarHover(true);
+  };
+  const handleSidebarMouseLeave = () => {
+    if (window.innerWidth > 900) setSidebarHover(false);
+  };
+
+  // Sidebar abierto si está abierto por botón hamburguesa (móvil) o hover (escritorio)
+  const sidebarShouldBeOpen = sidebarOpen || sidebarHover;
 
   return (
     <div>
       {/* Overlay para móvil */}
       {sidebarOpen && <div className="admin-overlay" onClick={closeSidebar}></div>}
-      {/* Sidebar */}
-      <aside className={`admin-sidebar${sidebarOpen ? ' open' : ''}`}>
-        <div className="logo">
-          <span className="logo-circle">R</span> Resistencia
-        </div>
-        <nav>
-          <a href="#" className="active" onClick={closeSidebar}> <span role="img" aria-label="resumen">🕒</span> Resumen General </a>
-          <a href="#" onClick={closeSidebar}> <span role="img" aria-label="clientes">👥</span> Gestión de Clientes </a>
-          <a href="#" onClick={closeSidebar}> <span role="img" aria-label="entrenadores">📦</span> Gestión de Entrenadores </a>
-          <a href="#" onClick={closeSidebar}> <span role="img" aria-label="clases">📝</span> Gestión de Clases </a>
-          <a href="#" onClick={closeSidebar}> <span role="img" aria-label="inventario">📁</span> Inventario </a>
-          <a href="#" onClick={closeSidebar}> <span role="img" aria-label="finanzas">💳</span> Ventas y Finanzas </a>
-        </nav>
-        <button className="logout-btn" onClick={onLogout}>Cerrar sesión</button>
-      </aside>
+      {/* Nuevo Sidebar */}
+      <Sidebar />
 
       {/* Main content */}
       <main className="admin-main">
         {/* Navbar */}
         <div className="admin-navbar">
           {/* Botón hamburguesa solo visible en móvil */}
-          <button
-            className="admin-burger"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Abrir menú"
-          >
-            <span />
-            <span />
-            <span />
-          </button>
+          {window.innerWidth <= 900 && (
+            <button
+              className="admin-burger"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Abrir menú"
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+          )}
           <a href="#" className="nav-link active">Inicio</a>
           <a href="#" className="nav-link">Registro de clientes</a>
           <a href="#" className="nav-link">Entrenadores</a>
