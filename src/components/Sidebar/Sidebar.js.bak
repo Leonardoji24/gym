@@ -1,0 +1,187 @@
+import React, { useState } from 'react';
+import './Sidebar.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import logoR from './assets/img/letrar.png';
+
+
+const Sidebar = () => {
+  const [finanzasOpen, setFinanzasOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  return (
+    <>
+      {/* Overlay para cerrar el sidebar tocando fuera */}
+      {sidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          style={{position:'fixed',top:0,left:0,width:'100vw',height:'100vh',zIndex:1100,background:'rgba(0,0,0,0.25)'}}
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      {/* Sidebar visible solo en escritorio o cuando está abierto en móvil */}
+      { (sidebarOpen || window.innerWidth >= 900) && (
+        <aside className={`app-sidebar bg-body-secondary shadow${sidebarOpen ? ' open' : ''}`} data-bs-theme="dark" style={{zIndex:1300}}>
+          {/* Sidebar Brand */}
+          <div className="sidebar-brand">
+            <a
+              href="#"
+              className="brand-link"
+              style={{cursor: window.innerWidth < 900 ? 'pointer' : 'default'}}
+              onClick={e => {
+                e.preventDefault();
+                if (window.innerWidth < 900) setSidebarOpen(open => !open);
+              }}
+              aria-label="Abrir/cerrar menú lateral"
+            >
+              <img src={logoR} alt="Resistencia Logo" className="brand-image opacity-75 shadow" />
+              <span className="brand-text fw-light">Resistencia</span>
+            </a>
+          </div>
+          {/* Sidebar Wrapper */}
+          <div className="sidebar-wrapper">
+            <nav className="mt-2">
+  <ul className="nav sidebar-menu flex-column" role="menu" data-accordion="false" onClick={() => { if(window.innerWidth<900) setSidebarOpen(false); }}>
+                {/* Resumen General */}
+                <li className="nav-item">
+                  <a href="#" className="nav-link">
+                    <i className="nav-icon bi bi-speedometer2"></i>
+                    <p>Resumen General</p>
+                  </a>
+                </li>
+                {/* Gestión de Clientes */}
+                <li className="nav-item">
+                  <a href="#" className="nav-link">
+                    <i className="nav-icon bi bi-people-fill"></i>
+                    <p>Gestión de Clientes</p>
+                  </a>
+                </li>
+                {/* Gestión de Entrenadores */}
+                <li className="nav-item">
+                  <a href="#" className="nav-link">
+                    <i className="nav-icon bi bi-box-seam"></i>
+                    <p>Gestión de Entrenadores</p>
+                  </a>
+                </li>
+                {/* Gestión de Clases */}
+                <li className="nav-item">
+                  <a href="#" className="nav-link">
+                    <i className="nav-icon bi bi-pencil-square"></i>
+                    <p>Gestión de Clases</p>
+                  </a>
+                </li>
+                {/* Inventario */}
+                <li className="nav-item">
+                  <a href="#" className="nav-link">
+                    <i className="nav-icon bi bi-box"></i>
+                    <p>Inventario</p>
+                  </a>
+                </li>
+                {/* Ventas y Finanzas */}
+                <li className="nav-item dropdown-hover">
+                  <a href="#" className="nav-link" onClick={e => {e.preventDefault();setFinanzasOpen(!finanzasOpen);}}>
+                    <i className="nav-icon bi bi-cash-coin"></i>
+                    <p style={{display:'flex',alignItems:'center',margin:0}}>
+                      Ventas y Finanzas
+                      <i className="nav-arrow bi bi-chevron-down"></i>
+                    </p>
+                  </a>
+                  <ul className="nav nav-treeview" style={{display: finanzasOpen ? 'block' : 'none'}} onClick={e => e.stopPropagation()}>
+                    <li className="nav-item">
+                      <a href="#" className="nav-link">
+                        <i className="nav-icon bi bi-circle"></i>
+                        <p>Pagos</p>
+                      </a>
+                    </li>
+                    <li className="nav-item">
+                      <a href="#" className="nav-link">
+                        <i className="nav-icon bi bi-circle"></i>
+                        <p>Reportes</p>
+                      </a>
+                    </li>
+                    <li className="nav-item">
+                      <a href="#" className="nav-link">
+                        <i className="nav-icon bi bi-circle"></i>
+                        <p>Facturas</p>
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+              <hr style={{margin: '1rem 0', borderColor: '#444'}} />
+              <div className="sidebar-logout" style={{position: 'absolute', bottom: 0, width: '100%', paddingBottom: '2rem', display:'flex', justifyContent:'center'}}>
+                <button
+                  className="logout-btn"
+                  style={{
+                    background: 'linear-gradient(90deg,#ff5858,#ffae42)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 30,
+                    padding: '0.75rem 2rem',
+                    fontWeight: 600,
+                    fontSize: 17,
+                    boxShadow: '0 2px 8px #0002',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                  onMouseOver={e => {e.currentTarget.style.transform='scale(1.06)';e.currentTarget.style.boxShadow='0 4px 16px #ffae4244';}}
+                  onMouseOut={e => {e.currentTarget.style.transform='scale(1)';e.currentTarget.style.boxShadow='0 2px 8px #0002';}}
+                  onClick={async e => {
+                    e.preventDefault();
+                    const btn = e.currentTarget;
+                    const orig = btn.innerHTML;
+                    btn.innerHTML = '<span style="display:flex;align-items:center"><i class="bi bi-box-arrow-right" style="font-size:20px;margin-right:10px"></i> Cerrando...</span>';
+                    await new Promise(r=>setTimeout(r,1000));
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    sessionStorage.clear();
+                    window.location.href = '/login';
+                  }}
+                >
+                  <i className="bi bi-box-arrow-right" style={{fontSize: 20}}></i>
+                  Cerrar sesión
+        color: '#fff',
+        border: 'none',
+        borderRadius: 30,
+        padding: '0.75rem 2rem',
+        fontWeight: 600,
+        fontSize: 17,
+        boxShadow: '0 2px 8px #0002',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        cursor: 'pointer',
+        outline: 'none',
+      }}
+      onMouseOver={e => {e.currentTarget.style.transform='scale(1.06)';e.currentTarget.style.boxShadow='0 4px 16px #ffae4244';}}
+      onMouseOut={e => {e.currentTarget.style.transform='scale(1)';e.currentTarget.style.boxShadow='0 2px 8px #0002';}}
+      onClick={async e => {
+        e.preventDefault();
+        const btn = e.currentTarget;
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<span style="display:flex;align-items:center"><i class="bi bi-box-arrow-right" style="font-size:20px;margin-right:10px"></i> Cerrando...</span>';
+        await new Promise(r=>setTimeout(r,1000));
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        sessionStorage.clear();
+        window.location.href = '/login';
+      }}
+    >
+      <i className="bi bi-box-arrow-right" style={{fontSize: 20}}></i>
+      Cerrar sesión
+    </button>
+  </div>
+          </>
+        </nav>
+      </div>
+    </aside>
+    </>
+  );
+}
+      
+ 
+export default Sidebar;
