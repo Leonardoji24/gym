@@ -12,16 +12,6 @@ const AdminPanel = ({ onLogout }) => {
   // Cierra el sidebar al hacer clic en un enlace o fondo oscuro
   const closeSidebar = () => setSidebarOpen(false);
 
-  // Sidebar en escritorio: hover para mostrar/ocultar
-  const handleSidebarMouseEnter = () => {
-    if (window.innerWidth > 900) setSidebarHover(true);
-  };
-  const handleSidebarMouseLeave = () => {
-    if (window.innerWidth > 900) setSidebarHover(false);
-  };
-
-  // Sidebar abierto si está abierto por botón hamburguesa (móvil) o hover (escritorio)
-  const sidebarShouldBeOpen = sidebarOpen || sidebarHover;
 
   return (
     <div>
@@ -56,6 +46,9 @@ const AdminPanel = ({ onLogout }) => {
               </Link>
               <Link to="/ventas-finanzas" className="shortcut-link" title="Finanzas">
                 <i className="bi bi-cash-coin"></i>
+              </Link>
+              <Link to="/asistencias" className="shortcut-link" title="Asistencias">
+                <i className="bi bi-calendar-check"></i>
               </Link>
             </div>
             {/* Botón hamburguesa solo visible en móvil */}

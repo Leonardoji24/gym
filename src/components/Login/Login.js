@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import './Login.css';
 
-const API_URL = 'http://192.168.1.135:5000/api';
+const API_URL = process.env.REACT_APP_API_URL;
 
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
@@ -16,9 +16,11 @@ const Login = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/auth/login`, {
         email,
         password
+      }, {
+        withCredentials: true
       });
 
       const { user, token } = response.data;

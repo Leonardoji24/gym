@@ -83,3 +83,29 @@ INSERT INTO rol_permisos (rol_id, permiso_id) VALUES
 
 -- Cliente: sin permisos especiales
 -- No se asignan permisos al rol de cliente
+
+-- Crear tabla de asistencias
+CREATE TABLE IF NOT EXISTS asistencias (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    miembro_id INT NOT NULL,
+    fecha_hora_entrada DATETIME NOT NULL,
+    fecha_hora_salida DATETIME,
+    tipo_asistencia ENUM('entrenamiento', 'clase', 'otro') NOT NULL DEFAULT 'entrenamiento',
+    notas TEXT,
+    creado_por INT, -- ID del usuario que registró la asistencia (si aplica)
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (miembro_id) REFERENCES miembros(id) ON DELETE CASCADE,
+    FOREIGN KEY (creado_por) REFERENCES miembros(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+-- Índices para búsquedas rápidas
+CREATE INDEX idx_asistencias_miembro ON asistencias(miembro_id);
+CREATE INDEX idx_asistencias_fecha ON asistencias(fecha_hora_entrada);
+
+-- Insertar algunos datos de ejemplo
+INSERT INTO asistencias (miembro_id, fecha_hora_entrada, fecha_hora_salida, tipo_asistencia, notas, creado_por)
+VALUES 
+(4, NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 2 DAY + INTERVAL 1 HOUR, 'entrenamiento', 'Entrenamiento de rutina A', 3),
+(4, NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY + INTERVAL 2 HOUR, 'clase', 'Clase de spinning', 2),
+(4, NOW(), NULL, 'entrenamiento', 'En entrenamiento actual', 3);

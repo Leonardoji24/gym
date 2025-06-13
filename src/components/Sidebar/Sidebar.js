@@ -29,8 +29,8 @@ const Sidebar = ({
           onMouseLeave={() => { if (!sidebarPinned) setSidebarHover(false); }}
         >
           <div className="sidebar-brand" style={{display: 'flex', alignItems: 'center', gap: 12, padding: '0.5rem 1.1rem'}}>
-            <a
-              href="#"
+            <button
+              type="button"
               className="brand-link"
               style={{cursor: 'pointer'}}
               onClick={e => {
@@ -43,7 +43,7 @@ const Sidebar = ({
             >
               <img src={logoR} alt="Resistencia Logo" className="brand-image opacity-75 shadow" style={{width: 42, height: 42, marginRight: 8}} />
               <span className="brand-text fw-light" style={{fontSize: 20, color:'#fff'}}>Resistencia</span>
-            </a>
+            </button>
           </div>
           {/* Sidebar Wrapper */}
           <div className="sidebar-wrapper">
@@ -82,6 +82,13 @@ const Sidebar = ({
                   <Link to="/inventario" className="nav-link">
                     <i className="nav-icon bi bi-box"></i>
                     <p>Inventario</p>
+                  </Link>
+                </li>
+                {/* Control de Asistencias */}
+                <li className="nav-item">
+                  <Link to="/asistencias" className="nav-link">
+                    <i className="nav-icon bi bi-clipboard-check"></i>
+                    <p>Control de Asistencias</p>
                   </Link>
                 </li>
                 {/* Ventas y Finanzas */}

@@ -16,7 +16,7 @@ app = Flask(__name__)
 # Configuración de CORS para desarrollo
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["http://localhost:3000", "http://192.168.1.135:3000"],
+        "origins": ["http://localhost:3307", "http://192.168.11.136:3307"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"],
         "supports_credentials": True,
@@ -27,12 +27,14 @@ CORS(app, resources={
 # Configuración para manejar las solicitudes OPTIONS
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'http://192.168.1.135:3000')
+    allowed_origins = ['http://localhost:3307', 'http://192.168.11.136:3307']
+    origin = request.headers.get('Origin')
+    if origin in allowed_origins:
+        response.headers.add('Access-Control-Allow-Origin', origin)
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
-
 # Configuración de JWT
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'tu_clave_secreta_muy_segura')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
@@ -255,7 +257,7 @@ def get_current_user(current_user):
 def test_connection():
     return jsonify({"message": "Conexión exitosa al servidor Flask"}), 200
 
-# Ruta para obtener todos los miembros (ejemplo)
+# Ruta para obtener todos los miembros
 @app.route('/api/miembros', methods=['GET'])
 def get_miembros():
     connection = get_db_connection()
@@ -274,7 +276,7 @@ def get_miembros():
             cursor.close()
             connection.close()
 
-# Ruta para crear un nuevo miembro (ejemplo)
+# Ruta para crear un nuevo miembro
 @app.route('/api/miembros', methods=['POST'])
 def create_miembro():
     data = request.json
@@ -285,25 +287,165 @@ def create_miembro():
     try:
         cursor = connection.cursor()
         query = """
-            INSERT INTO miembros (nombre, email, telefono, fecha_inscripcion)
-            VALUES (%s, %s, %s, CURDATE())
+            INSERT INTO miembros (nombre, email, telefono, fecha_inscripcion, rol_id, password_hash)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(query, (data['nombre'], data['email'], data['telefono']))
+        
+        # En una aplicación real, deberías hashear la contraseña aquí
+        password_hash = data.get('password', '')  # Esto es solo para ejemplo
+        
+        cursor.execute(query, ( 
+            data['nombre'],
+            data['email'],
+            data.get('telefono', ''),
+            data.get('fecha_inscripcion', datetime.now().date()),
+            data.get('rol_id', 4),  # Por defecto cliente
+            password_hash
+        ))
+        
         connection.commit()
-        return jsonify({"message": "Miembro creado exitosamente", "id": cursor.lastrowid}), 201
+        return jsonify({"message": "Miembro creado exitosamente"}), 201
+        
     except Error as e:
         connection.rollback()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 400
     finally:
         if connection and connection.is_connected():
             cursor.close()
             connection.close()
 
+# Rutas para el manejo de asistencias
+@app.route('/api/asistencias', methods=['GET'])
+@token_required
+def get_asistencias(current_user):
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({"error": "Error al conectar a la base de datos"}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        
+        # Si es cliente, solo puede ver sus propias asistencias
+        query = """
+            SELECT a.*, m.nombre as miembro_nombre, m.email as miembro_email,
+                   u.nombre as creado_por_nombre
+            FROM asistencias a
+            JOIN miembros m ON a.miembro_id = m.id
+            LEFT JOIN miembros u ON a.creado_por = u.id
+            WHERE %s = %s OR %s IN (1, 2, 3)  # Solo admin, entrenador o recepcionista pueden ver todas
+            ORDER BY a.fecha_hora_entrada DESC
+        """
+        
+        # Si es admin/entrenador/recepcionista, ver todas las asistencias
+        if current_user not in ['admin@gym.com', 'entrenador@gym.com', 'recepcion@gym.com']:
+            cursor.execute("SELECT id FROM miembros WHERE email = %s", (current_user,))
+            miembro = cursor.fetchone()
+            if not miembro:
+                return jsonify({"error": "Miembro no encontrado"}), 404
+            miembro_id = miembro['id']
+            cursor.execute(query, (miembro_id, miembro_id, 0))
+        else:
+            cursor.execute(query, (0, 0, 1))
+            
+        asistencias = cursor.fetchall()
+        return jsonify(asistencias)
+        
+    except Exception as e:
+        print(f"Error al obtener asistencias: {str(e)}")
+        return jsonify({"error": "Error al obtener las asistencias"}), 500
+    finally:
+        if 'connection' in locals() and connection and connection.is_connected():
+            cursor.close()
+            connection.close()
+
+@app.route('/api/asistencias', methods=['POST'])
+@token_required
+def registrar_asistencia(current_user):
+    try:
+        data = request.json
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({"error": "Error al conectar a la base de datos"}), 500
+            
+        cursor = connection.cursor()
+        
+        # Obtener ID del usuario que registra la asistencia
+        cursor.execute("SELECT id FROM miembros WHERE email = %s", (current_user,))
+        creado_por = cursor.fetchone()
+        
+        query = """
+            INSERT INTO asistencias 
+            (miembro_id, fecha_hora_entrada, tipo_asistencia, notas, creado_por)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        
+        cursor.execute(query, (
+            data['miembro_id'],
+            data.get('fecha_hora_entrada', datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
+            data.get('tipo_asistencia', 'entrenamiento'),
+            data.get('notas', ''),
+            creado_por['id'] if creado_por else None
+        ))
+        
+        connection.commit()
+        return jsonify({"message": "Asistencia registrada exitosamente"}), 201
+        
+    except Exception as e:
+        connection.rollback()
+        print(f"Error al registrar asistencia: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+    finally:
+        if 'connection' in locals() and connection and connection.is_connected():
+            cursor.close()
+            connection.close()
+
+@app.route('/api/asistencias/<int:asistencia_id>/salida', methods=['PUT'])
+@token_required
+def registrar_salida(current_user, asistencia_id):
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({"error": "Error al conectar a la base de datos"}), 500
+            
+        cursor = connection.cursor(dictionary=True)
+        
+        # Verificar que la asistencia existe y no tiene fecha de salida
+        cursor.execute("""
+            SELECT * FROM asistencias 
+            WHERE id = %s AND fecha_hora_salida IS NULL
+        """, (asistencia_id,))
+        
+        asistencia = cursor.fetchone()
+        if not asistencia:
+            return jsonify({"error": "Asistencia no encontrada o ya registrada la salida"}), 404
+        
+        # Actualizar la fecha de salida
+        cursor.execute("""
+            UPDATE asistencias 
+            SET fecha_hora_salida = %s 
+            WHERE id = %s
+        """, (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), asistencia_id))
+        
+        connection.commit()
+        return jsonify({"message": "Salida registrada exitosamente"})
+        
+    except Exception as e:
+        connection.rollback()
+        print(f"Error al registrar salida: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+    finally:
+        if 'connection' in locals() and connection and connection.is_connected():
+            cursor.close()
+            connection.close()
+
 if __name__ == '__main__':
-    print("Iniciando servidor en http://192.168.1.135:5000")
+    print("Iniciando servidor en http://192.168.11.136:5000")
     print("Rutas disponibles:")
     print("  - POST /api/auth/login")
     print("  - GET  /api/test")
     print("  - GET  /api/miembros")
     print("  - POST /api/miembros")
-    app.run(host='192.168.1.135', port=5000, debug=True)
+    print("  - GET  /api/asistencias")
+    print("  - POST /api/asistencias")
+    print("  - PUT  /api/asistencias/<id>/salida")
+    app.run(host='0.0.0.0', port=5000, debug=True)
