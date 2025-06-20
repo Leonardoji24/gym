@@ -28,11 +28,11 @@ const Sidebar = ({
           onMouseEnter={() => { if (!sidebarPinned) setSidebarHover(true); }}
           onMouseLeave={() => { if (!sidebarPinned) setSidebarHover(false); }}
         >
-          <div className="sidebar-brand" style={{display: 'flex', alignItems: 'center', gap: 12, padding: '0.5rem 1.1rem'}}>
+          <div className="sidebar-brand" style={{display: 'flex', alignItems: 'center', gap: 12, padding: '0.5rem 1.1rem', background: 'transparent', boxShadow: 'none', border: 'none'}}>
             <button
               type="button"
               className="brand-link"
-              style={{cursor: 'pointer'}}
+              style={{cursor: 'pointer', background: 'transparent', boxShadow: 'none', border: 'none', padding: 0}}
               onClick={e => {
                 e.preventDefault();
                 setSidebarPinned(pinned => !pinned);
@@ -41,7 +41,7 @@ const Sidebar = ({
               }}
               aria-label="Fijar/Desfijar menú lateral"
             >
-              <img src={logoR} alt="Resistencia Logo" className="brand-image opacity-75 shadow" style={{width: 42, height: 42, marginRight: 8}} />
+              <img src={logoR} alt="Resistencia Logo" className="brand-image opacity-75 shadow" style={{width: 42, height: 42, marginRight: 8, backgroundColor: 'transparent', boxShadow: 'none', border: 'none'}} />
               <span className="brand-text fw-light" style={{fontSize: 20, color:'#fff'}}>Resistencia</span>
             </button>
           </div>
@@ -119,42 +119,6 @@ const Sidebar = ({
                 </li>
               </ul>
               <hr style={{margin: '1rem 0', borderColor: '#444'}} />
-              <div className="sidebar-logout" style={{position: 'absolute', bottom: 0, width: '100%', paddingBottom: '2rem', display:'flex', justifyContent:'center'}}>
-                <button
-                  className="logout-btn"
-                  style={{
-                    background: 'linear-gradient(90deg,#ff5858,#ffae42)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 30,
-                    padding: '0.75rem 2rem',
-                    fontWeight: 600,
-                    fontSize: 17,
-                    boxShadow: '0 2px 8px #0002',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                    cursor: 'pointer',
-                    outline: 'none',
-                  }}
-                  onMouseOver={e => {e.currentTarget.style.transform='scale(1.06)';e.currentTarget.style.boxShadow='0 4px 16px #ffae4244';}}
-                  onMouseOut={e => {e.currentTarget.style.transform='scale(1)';e.currentTarget.style.boxShadow='0 2px 8px #0002';}}
-                  onClick={async e => {
-                    e.preventDefault();
-                    const btn = e.currentTarget;
-                    btn.innerHTML = '<span style="display:flex;align-items:center"><i class="bi bi-box-arrow-right" style="font-size:20px;margin-right:10px"></i> Cerrando...</span>';
-                    await new Promise(r=>setTimeout(r,1000));
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    sessionStorage.clear();
-                    window.location.href = '/login';
-                  }}
-                >
-                  <i className="bi bi-box-arrow-right" style={{fontSize: 20, marginRight: 10}}></i>
-                  <span>Cerrar sesión</span>
-                </button>
-              </div>
             </nav>
           </div>
         </aside>

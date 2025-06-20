@@ -52,16 +52,29 @@ const AdminPanel = ({ onLogout }) => {
               </Link>
             </div>
             {/* Botón hamburguesa solo visible en móvil */}
-            {window.innerWidth <= 900 && (
-              <button
-                className="admin-burger"
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Abrir menú"
-              >
-                <span />
-                <span />
-                <span />
-              </button>
+            {window.innerWidth <= 900 ? (
+              <>
+                <button
+                  className="admin-burger"
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label="Abrir menú"
+                >
+                  <span />
+                  <span />
+                  <span />
+                </button>
+              </>
+            ) : (
+              <div className="navbar-user-section">
+                <button 
+                  onClick={onLogout} 
+                  className="logout-button"
+                  title="Cerrar sesión"
+                >
+                  <i className="bi bi-box-arrow-right"></i>
+                  <span className="logout-text">Cerrar  sesión</span>
+                </button>
+              </div>
             )}
           </div>
           {/* Aquí se renderizan las páginas según la ruta */}

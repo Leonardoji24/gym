@@ -212,14 +212,64 @@
 
 .fixed-navbar {
   background: #fff;
-  padding: 0px;
+  padding: 0 20px;
   height: 60px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   border-bottom: 1px solid #e0e0e0;
   position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 10;
+}
+
+/* Estilos para la sección de atajos */
+.navbar-shortcuts {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Estilos para el botón de cierre de sesión */
+.navbar-user-section {
+  margin-left: auto;
+  padding-right: 10px;
+}
+
+.logout-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  color: #dc3545;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.logout-button:hover {
+  background-color: #f1f3f5;
+  color: #c82333;
+}
+
+.logout-button i {
+  font-size: 1.1rem;
+}
+
+/* Ajustes para pantallas pequeñas */
+@media (max-width: 900px) {
+  .logout-button {
+    padding: 6px 12px;
+  }
+  
+  .logout-text {
+    display: none;
+  }
 }
 .admin-navbar {
   background: #fff;

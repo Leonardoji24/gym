@@ -3,7 +3,7 @@
   flex-shrink: 0;
   background: #363d44;
   color: #d1d5db;
-  height: 100vh;
+  height: 150vh;
   display: flex;
   flex-direction: column;
   transition: width 0.25s cubic-bezier(.4,0,.2,1);
@@ -13,23 +13,6 @@
 .app-sidebar.open {
   width: 230px;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 .sidebar-brand {
   padding: 24px 20px 16px 20px;
   display: flex;

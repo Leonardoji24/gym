@@ -31,22 +31,6 @@ export default function Asistencias() {
   // Obtener el token del localStorage
   const token = localStorage.getItem('token');
 
-  // Cargar datos iniciales
-  useEffect(() => {
-    const cargarDatos = async () => {
-      try {
-        await Promise.all([
-          cargarAsistencias(),
-          cargarMiembros()
-        ]);
-      } catch (error) {
-        console.error('Error al cargar datos:', error);
-      }
-    };
-    
-    cargarDatos();
-  }, [cargarAsistencias, cargarMiembros]);
-
   // Configurar axios para incluir el token en las peticiones
   const api = axios.create({
     baseURL: 'http://192.168.1.135:3306/api',
@@ -87,6 +71,27 @@ export default function Asistencias() {
       }
     }
   };
+
+  // Cargar datos iniciales
+  useEffect(() => {
+    const cargarDatos = async () => {
+      try {
+        await Promise.all([
+          cargarAsistencias(),
+          cargarMiembros()
+        ]);
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+      }
+    };
+    cargarDatos();
+    // Exponer función global para actualizar asistencias desde otras páginas
+    window.actualizarAsistenciasTabla = cargarAsistencias;
+    return () => {
+      window.actualizarAsistenciasTabla = undefined;
+    };
+  }, []);
+
 
   // Obtener la asistencia de hoy para un miembro
   const getAsistenciaHoy = (miembroId) => {
