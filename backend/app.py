@@ -867,3 +867,4 @@ if __name__ == '__main__':
     print("  - PUT  /api/clases/<id>")
     print("  - DELETE /api/clases/<id>")
     app.run(host='0.0.0.0', port=5000, debug=True)
+    
