@@ -1,0 +1,44 @@
+.entrenador-sidebar {
+  width: 220px;
+  background: #1a237e;
+  color: #fff;
+  min-height: 100vh;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.06);
+}
+.sidebar-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 28px 0 18px 28px;
+  border-bottom: 1px solid #283593;
+  margin-bottom: 12px;
+}
+.entrenador-sidebar nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.entrenador-sidebar nav ul li {
+  display: flex;
+  align-items: center;
+  padding: 14px 28px;
+  cursor: pointer;
+  transition: background 0.18s;
+  font-size: 1.1rem;
+  border-left: 4px solid transparent;
+}
+.entrenador-sidebar nav ul li i {
+  margin-right: 14px;
+  font-size: 1.25em;
+}
+.entrenador-sidebar nav ul li.active,
+.entrenador-sidebar nav ul li:hover {
+  background: #283593;
+  border-left: 4px solid #ffb300;
+}
+.entrenador-sidebar nav ul li span {
+  flex: 1;
+}

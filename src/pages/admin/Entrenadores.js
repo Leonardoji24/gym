@@ -9,8 +9,8 @@ import {
   Refresh as RefreshIcon,
   People as PeopleIcon 
 } from '@mui/icons-material';
-import { getEntrenadores } from '../services/entrenadoresService';
-import api from '../services/api';
+import { getEntrenadores } from '../../services/entrenadoresService';
+import api from '../../services/api';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import Button from '@mui/material/Button';
@@ -28,7 +28,7 @@ const Entrenadores = () => {
     message: '',
     severity: 'success'
   });
-  const [asistenciasHoy, setAsistenciasHoy] = useState([]);
+  const [sHoy, setAsistenciasHoy] = useState([]);
 
 
   // Función para cargar los entrenadores
@@ -64,41 +64,41 @@ const Entrenadores = () => {
     fetchAsistenciasHoy();
   }, [refresh]);
 
-  // Cargar asistencias de hoy
+  // Cargar s de hoy
   const fetchAsistenciasHoy = async () => {
     try {
-      const response = await api.get('/asistencias');
+      const response = await api.get('/s');
       setAsistenciasHoy(response.data);
     } catch (error) {
-      console.error('Error al cargar asistencias de hoy:', error);
+      console.error('Error al cargar s de hoy:', error);
     }
   };
 
-  // Verifica si el entrenador ya marcó asistencia hoy
+  // Verifica si el entrenador ya marcó  hoy
   const tieneAsistenciaHoy = (entrenadorId) => {
-    return asistenciasHoy.some(a => a.miembro_id === entrenadorId);
+    return sHoy.some(a => a.miembro_id === entrenadorId);
   };
 
-  // Marcar asistencia para un entrenador
+  // Marcar  para un entrenador
   const handleMarcarAsistencia = async (entrenador) => {
     if (!entrenador || !entrenador.id) {
       setSnackbar({ open: true, message: 'Entrenador no válido', severity: 'error' });
       return;
     }
     try {
-      await api.post('/asistencias', {
+      await api.post('/s', {
         miembro_id: entrenador.id,
-        tipo_asistencia: 'entrenamiento',
+        tipo_: 'entrenamiento',
         notas: 'Asistencia marcada desde Entrenadores'
       });
       setSnackbar({ open: true, message: 'Asistencia marcada correctamente', severity: 'success' });
       fetchAsistenciasHoy();
-      // Actualizar tabla de asistencias si está abierta
+      // Actualizar tabla de s si está abierta
       if (window.actualizarAsistenciasTabla) {
         window.actualizarAsistenciasTabla();
       }
     } catch (error) {
-      setSnackbar({ open: true, message: 'Error al marcar asistencia', severity: 'error' });
+      setSnackbar({ open: true, message: 'Error al marcar ', severity: 'error' });
     }
   };
 
@@ -193,7 +193,6 @@ const Entrenadores = () => {
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Email</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Teléfono</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Fecha de Registro</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Asistencia Hoy</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -208,19 +207,7 @@ const Entrenadores = () => {
                   <TableCell>{entrenador.email}</TableCell>
                   <TableCell>{entrenador.telefono}</TableCell>
                   <TableCell>{new Date(entrenador.fechaRegistro).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      color={tieneAsistenciaHoy(entrenador.id) ? 'success' : 'primary'}
-                      size="small"
-                      startIcon={tieneAsistenciaHoy(entrenador.id) ? <CheckCircleIcon /> : <CheckCircleOutlineIcon />}
-                      disabled={tieneAsistenciaHoy(entrenador.id)}
-                      onClick={() => handleMarcarAsistencia(entrenador)}
-                    >
-                      {tieneAsistenciaHoy(entrenador.id) ? 'Marcada' : 'Marcar asistencia'}
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                  </TableRow>
               ))}
               {emptyRows > 0 && (
                 <TableRow style={{ height: 53 * emptyRows }}>

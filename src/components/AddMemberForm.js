@@ -9,25 +9,45 @@ const roles = [
   { value: 4, label: 'Cliente' },
 ];
 
+const planOptions = [
+  { value: 'basico', label: 'Básico' },
+  { value: 'intermedio', label: 'Intermedio' },
+  { value: 'premium', label: 'Premium' },
+];
+
+const generoOptions = [
+  { value: 'masculino', label: 'Masculino' },
+  { value: 'femenino', label: 'Femenino' },
+  { value: 'otro', label: 'Otro' },
+];
+
+const condicionesFisicasOptions = [
+  { value: 'ninguna', label: 'Ninguna' },
+  { value: 'lesion_rodilla', label: 'Lesión de rodilla' },
+  { value: 'lesion_espalda', label: 'Lesión de espalda' },
+  { value: 'asma', label: 'Asma' },
+  { value: 'hipertension', label: 'Hipertensión' },
+  { value: 'embarazo', label: 'Embarazo' },
+];
+
+const fitnessGoalOptions = [
+  { value: 'perder_peso', label: 'Perder peso' },
+  { value: 'ganar_musculo', label: 'Ganar músculo' },
+  { value: 'mantenerse', label: 'Mantenerse en forma' },
+  { value: 'mejorar_salud', label: 'Mejorar salud' },
+  { value: 'rendimiento', label: 'Mejorar rendimiento' },
+];
+
 const initialState = {
   nombre: '',
-  email: '',
-  telefono: '',
-  fecha_inscripcion: '',
-  password: '',
-  rol_id: 4,
-  // Admin
-  permisos_especiales: '',
-  // Cliente
+  apellidos: '',
   fecha_nacimiento: '',
   genero: '',
-  direccion: '',
-  tipo_membresia: '',
-  fecha_vencimiento_membresia: '',
-  // Entrenador
-  especialidad: '',
-  horario_trabajo: '',
-  certificaciones: '',
+  email: '',
+  telefono: '',
+  plan: '',
+  condiciones_fisicas: '',
+  fitness_goal: '',
 };
 
 const AddMemberForm = ({ onMemberCreated }) => {
@@ -65,74 +85,97 @@ const AddMemberForm = ({ onMemberCreated }) => {
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4, p: 2, border: '1px solid #ddd', borderRadius: 2, background: '#fafafa' }}>
-      <Typography variant="h6" gutterBottom>Agregar Nuevo Miembro</Typography>
+    <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4, p: 4, border: '2px solid #1976d2', borderRadius: 3, background: '#fafafa', maxWidth: 600, mx: 'auto', maxHeight: '80vh', overflowY: 'auto' }}>
+      <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>Agregar Nuevo Cliente</Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       <Grid container spacing={2}>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField label="Nombre" name="nombre" value={form.nombre} onChange={handleChange} fullWidth required />
+        <Grid item xs={12}>
+          <TextField label="Nombre" name="nombre" value={form.nombre} onChange={handleChange} fullWidth required size="large" sx={{ fontSize: '1.2rem', mb: 2 }} />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField label="Email" name="email" value={form.email} onChange={handleChange} fullWidth required type="email" />
+        <Grid item xs={12}>
+          <TextField label="Apellidos" name="apellidos" value={form.apellidos} onChange={handleChange} fullWidth required size="large" sx={{ fontSize: '1.2rem', mb: 2 }} />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField label="Teléfono" name="telefono" value={form.telefono} onChange={handleChange} fullWidth />
+        <Grid item xs={12}>
+          <TextField label="Fecha de nacimiento" name="fecha_nacimiento" value={form.fecha_nacimiento} onChange={handleChange} fullWidth required type="date" size="large" InputLabelProps={{ shrink: true }} sx={{ fontSize: '1.2rem', mb: 2 }} />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField label="Fecha de inscripción" name="fecha_inscripcion" value={form.fecha_inscripcion} onChange={handleChange} fullWidth required type="date" InputLabelProps={{ shrink: true }} />
+        <Grid item xs={12}>
+          <TextField label="Email" name="email" value={form.email} onChange={handleChange} fullWidth required type="email" size="large" sx={{ fontSize: '1.2rem', mb: 2 }} />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField label="Contraseña" name="password" value={form.password} onChange={handleChange} fullWidth required type="password" />
+        <Grid item xs={12}>
+          <TextField label="Teléfono" name="telefono" value={form.telefono} onChange={handleChange} fullWidth required size="large" sx={{ fontSize: '1.2rem', mb: 2 }} />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <TextField select label="Rol" name="rol_id" value={form.rol_id} onChange={handleRoleChange} fullWidth required>
-            {roles.map((rol) => (
-              <MenuItem key={rol.value} value={rol.value}>{rol.label}</MenuItem>
-            ))}
-          </TextField>
+        <Grid item xs={12}>
+          <TextField select label="Plan seleccionado" name="plan" value={form.plan} onChange={handleChange} fullWidth required size="large"
+  sx={{ fontSize: '1.2rem', mb: 2, minWidth: 300 }}
+  InputProps={{ style: { fontSize: '1.2rem', minWidth: 300 } }}
+  SelectProps={{
+    MenuProps: {
+      PaperProps: {
+        style: { minWidth: 300 }
+      }
+    }
+  }}
+>
+  {planOptions.map(plan => (
+    <MenuItem key={plan.value} value={plan.value} sx={{ fontSize: '1.15rem', minWidth: 300, whiteSpace: 'normal' }}>{plan.label}</MenuItem>
+  ))}
+</TextField>
         </Grid>
-        {/* Campos por rol */}
-        {form.rol_id === 1 && (
-          <Grid item xs={12} md={6}>
-            <TextField label="Permisos Especiales" name="permisos_especiales" value={form.permisos_especiales} onChange={handleChange} fullWidth />
-          </Grid>
-        )}
-        {form.rol_id === 2 && (
-          <>
-            <Grid item xs={12} md={4}>
-              <TextField label="Especialidad" name="especialidad" value={form.especialidad} onChange={handleChange} fullWidth />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField label="Horario de trabajo" name="horario_trabajo" value={form.horario_trabajo} onChange={handleChange} fullWidth />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField label="Certificaciones" name="certificaciones" value={form.certificaciones} onChange={handleChange} fullWidth />
-            </Grid>
-          </>
-        )}
-        {form.rol_id === 4 && (
-          <>
-            <Grid item xs={12} md={4}>
-              <TextField label="Fecha de nacimiento" name="fecha_nacimiento" value={form.fecha_nacimiento} onChange={handleChange} fullWidth type="date" InputLabelProps={{ shrink: true }} />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField label="Género" name="genero" value={form.genero} onChange={handleChange} fullWidth />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField label="Dirección" name="direccion" value={form.direccion} onChange={handleChange} fullWidth />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField label="Tipo de membresía" name="tipo_membresia" value={form.tipo_membresia} onChange={handleChange} fullWidth />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField label="Fecha de vencimiento de membresía" name="fecha_vencimiento_membresia" value={form.fecha_vencimiento_membresia} onChange={handleChange} fullWidth type="date" InputLabelProps={{ shrink: true }} />
-            </Grid>
-          </>
-        )}
+        <Grid item xs={12}>
+          <TextField select label="Género" name="genero" value={form.genero} onChange={handleChange} fullWidth required size="large"
+  sx={{ fontSize: '1.2rem', mb: 2, minWidth: 300 }}
+  InputProps={{ style: { fontSize: '1.2rem', minWidth: 300 } }}
+  SelectProps={{
+    MenuProps: {
+      PaperProps: {
+        style: { minWidth: 300 }
+      }
+    }
+  }}
+>
+  {generoOptions.map(option => (
+    <MenuItem key={option.value} value={option.value} sx={{ fontSize: '1.15rem', minWidth: 300, whiteSpace: 'normal' }}>{option.label}</MenuItem>
+  ))}
+</TextField>
+        </Grid>
+        <Grid item xs={12}>
+          <TextField select label="Condiciones físicas" name="condiciones_fisicas" value={form.condiciones_fisicas} onChange={handleChange} fullWidth required size="large"
+  sx={{ fontSize: '1.2rem', mb: 2, minWidth: 300 }}
+  InputProps={{ style: { fontSize: '1.2rem', minWidth: 300 } }}
+  SelectProps={{
+    MenuProps: {
+      PaperProps: {
+        style: { minWidth: 300 }
+      }
+    }
+  }}
+>
+  {condicionesFisicasOptions.map(option => (
+    <MenuItem key={option.value} value={option.value} sx={{ fontSize: '1.15rem', minWidth: 300, whiteSpace: 'normal' }}>{option.label}</MenuItem>
+  ))}
+</TextField>
+        </Grid>
+        <Grid item xs={12}>
+          <TextField select label="Fitness goal" name="fitness_goal" value={form.fitness_goal} onChange={handleChange} fullWidth required size="large"
+  sx={{ fontSize: '1.2rem', mb: 2, minWidth: 300 }}
+  InputProps={{ style: { fontSize: '1.2rem', minWidth: 300 } }}
+  SelectProps={{
+    MenuProps: {
+      PaperProps: {
+        style: { minWidth: 300 }
+      }
+    }
+  }}
+>
+  {fitnessGoalOptions.map(option => (
+    <MenuItem key={option.value} value={option.value} sx={{ fontSize: '1.15rem', minWidth: 300, whiteSpace: 'normal' }}>{option.label}</MenuItem>
+  ))}
+</TextField>
+        </Grid>
         <Grid item xs={12}>
           <Button type="submit" variant="contained" color="primary" disabled={loading}>
-            {loading ? 'Guardando...' : 'Crear Miembro'}
+            {loading ? 'Guardando...' : 'Crear Cliente'}
           </Button>
         </Grid>
       </Grid>

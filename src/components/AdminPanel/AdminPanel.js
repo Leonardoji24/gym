@@ -32,22 +32,22 @@ const AdminPanel = ({ onLogout }) => {
           {/* Navbar */}
           <div className="admin-navbar fixed-navbar">
             <div className="navbar-shortcuts">
-              <Link to="/clientes" className="shortcut-link" title="Clientes">
+              <Link to="clientes" className="shortcut-link" title="Clientes">
                 <i className="bi bi-people-fill"></i>
               </Link>
-              <Link to="/entrenadores" className="shortcut-link" title="Entrenadores">
+              <Link to="entrenadores" className="shortcut-link" title="Entrenadores">
                 <i className="bi bi-person-badge"></i>
               </Link>
-              <Link to="/clases" className="shortcut-link" title="Clases">
+              <Link to="clases" className="shortcut-link" title="Clases">
                 <i className="bi bi-pencil-square"></i>
               </Link>
-              <Link to="/inventario" className="shortcut-link" title="Inventario">
+              <Link to="inventario" className="shortcut-link" title="Inventario">
                 <i className="bi bi-box"></i>
               </Link>
-              <Link to="/ventas-finanzas" className="shortcut-link" title="Finanzas">
+              <Link to="ventas-finanzas" className="shortcut-link" title="Finanzas">
                 <i className="bi bi-cash-coin"></i>
               </Link>
-              <Link to="/asistencias" className="shortcut-link" title="Asistencias">
+              <Link to="reportes" className="shortcut-link" title="Reportes">
                 <i className="bi bi-calendar-check"></i>
               </Link>
             </div>

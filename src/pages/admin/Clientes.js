@@ -10,9 +10,9 @@ import {
   Refresh as RefreshIcon,
   People as PeopleIcon 
 } from '@mui/icons-material';
-import { getClientes } from '../services/clientesService';
-import MemberModal from '../components/MemberModal';
-import api from '../services/api';
+import { getClientes } from '../../services/clientesService';
+import MemberModal from '../../components/MemberModal';
+import api from '../../services/api';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import Button from '@mui/material/Button';
@@ -31,7 +31,7 @@ const Clientes = () => {
     message: '',
     severity: 'success'
   });
-  const [asistenciasHoy, setAsistenciasHoy] = useState([]);
+  const [sHoy, setAsistenciasHoy] = useState([]);
 
 
   // Función para cargar los clientes
@@ -47,7 +47,8 @@ const Clientes = () => {
         nombre: `${cliente.nombre} ${cliente.apellido || ''}`.trim(),
         email: cliente.email || 'Sin correo',
         telefono: cliente.telefono || 'Sin teléfono',
-        fechaRegistro: cliente.fecha_registro || new Date().toISOString().split('T')[0]
+        fechaRegistro: cliente.fecha_registro || new Date().toISOString().split('T')[0],
+        fechaVencimiento: cliente.fecha_vencimiento_membresia || null
       }));
       setClientes(clientesFormateados);
     } catch (err) {
@@ -69,22 +70,22 @@ const Clientes = () => {
     fetchAsistenciasHoy();
   }, [refresh]);
 
-  // Cargar asistencias de hoy
+  // Cargar s de hoy
   const fetchAsistenciasHoy = async () => {
     try {
-      const response = await api.get('/asistencias');
+      const response = await api.get('/s');
       setAsistenciasHoy(response.data);
     } catch (error) {
-      console.error('Error al cargar asistencias de hoy:', error);
+      console.error('Error al cargar s de hoy:', error);
     }
   };
 
-  // Verifica si el cliente ya marcó asistencia hoy
+  // Verifica si el cliente ya marcó  hoy
   const tieneAsistenciaHoy = (clienteId) => {
-    return asistenciasHoy.some(a => a.miembro_id === clienteId);
+    return sHoy.some(a => a.miembro_id === clienteId);
   };
 
-  // Marcar asistencia para un cliente
+  // Marcar  para un cliente
   const handleMarcarAsistencia = async (cliente) => {
   console.log('DEBUG cliente recibido en handleMarcarAsistencia:', cliente);
     if (!cliente || !cliente.id) {
@@ -92,20 +93,20 @@ const Clientes = () => {
       return;
     }
     try {
-      await api.post('/asistencias', {
+      await api.post('/s', {
         miembro_id: cliente.id,
-        tipo_asistencia: 'entrenamiento',
+        tipo_: 'entrenamiento',
         notas: 'Asistencia marcada desde Clientes'
       });
       setSnackbar({ open: true, message: 'Asistencia marcada correctamente', severity: 'success' });
       fetchAsistenciasHoy();
-      // Actualizar tabla de asistencias si está abierta
+      // Actualizar tabla de s si está abierta
       if (window.actualizarAsistenciasTabla) {
         window.actualizarAsistenciasTabla();
       }
     } catch (error) {
-      console.log('DEBUG error al marcar asistencia:', error.response?.data);
-    setSnackbar({ open: true, message: 'Error al marcar asistencia', severity: 'error' });
+      console.log('DEBUG error al marcar :', error.response?.data);
+    setSnackbar({ open: true, message: 'Error al marcar ', severity: 'error' });
     }
   };
 
@@ -207,35 +208,30 @@ const Clientes = () => {
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Email</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Teléfono</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Fecha de Registro</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Asistencia Hoy</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Vence</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedClientes.map((cliente) => (
-                <TableRow 
-                  key={cliente.id}
-                  hover
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                >
-                  <TableCell>{cliente.id}</TableCell>
-                  <TableCell>{cliente.nombre}</TableCell>
-                  <TableCell>{cliente.email}</TableCell>
-                  <TableCell>{cliente.telefono}</TableCell>
-                  <TableCell>{new Date(cliente.fechaRegistro).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="contained"
-                    color={tieneAsistenciaHoy(cliente.id) ? 'success' : 'primary'}
-                    size="small"
-                    startIcon={tieneAsistenciaHoy(cliente.id) ? <CheckCircleIcon /> : <CheckCircleOutlineIcon />}
-                    disabled={tieneAsistenciaHoy(cliente.id)}
-                    onClick={() => handleMarcarAsistencia(cliente)}
-                  >
-                    {tieneAsistenciaHoy(cliente.id) ? 'Marcada' : 'Marcar asistencia'}
-                  </Button>
-                </TableCell>
-                </TableRow>
-              ))}
+              {paginatedClientes.map((cliente) => {
+                // Resaltar si la membresía vence en <= 7 días o ya venció
+                let highlight = false;
+                if (cliente.fechaVencimiento) {
+                  const hoy = new Date();
+                  const vencimiento = new Date(cliente.fechaVencimiento);
+                  const diff = (vencimiento - hoy) / (1000 * 60 * 60 * 24);
+                  highlight = diff <= 7;
+                }
+                return (
+                  <TableRow key={cliente.id} sx={{ backgroundColor: highlight ? 'warning.light' : 'inherit' }}>
+                    <TableCell>{cliente.id}</TableCell>
+                    <TableCell>{cliente.nombre}</TableCell>
+                    <TableCell>{cliente.email}</TableCell>
+                    <TableCell>{cliente.telefono}</TableCell>
+                    <TableCell>{new Date(cliente.fechaRegistro).toLocaleDateString()}</TableCell>
+                    <TableCell>{cliente.fechaVencimiento ? new Date(cliente.fechaVencimiento).toLocaleDateString() : 'N/A'}</TableCell>
+                  </TableRow>
+                );
+              })}
               {emptyRows > 0 && (
                 <TableRow style={{ height: 53 * emptyRows }}>
                   <TableCell colSpan={6} />

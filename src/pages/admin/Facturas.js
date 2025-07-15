@@ -5,7 +5,7 @@ import {
   Typography, IconButton, CircularProgress, Alert, Snackbar, Button
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Receipt as ReceiptIcon, Search as SearchIcon, Refresh as RefreshIcon } from '@mui/icons-material';
-import { getFacturas, eliminarFactura } from '../services/facturasService';
+import { getFacturas, eliminarFactura } from '../../services/facturasService';
 
 const Facturas = () => {
   const [facturas, setFacturas] = useState([]);

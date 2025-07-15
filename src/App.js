@@ -1,20 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import './App.css';
 import Login from './components/Login/Login';
 import AdminPanel from './components/AdminPanel/AdminPanel';
 import TrainerPanel from './components/TrainerPanel/TrainerPanel';
 import ClientPanel from './components/ClientPanel/ClientPanel';
-import Clientes from './pages/Clientes';
-import Entrenadores from './pages/Entrenadores';
-import Clases from './pages/Clases';
-import Inventario from './pages/Inventario';
-import VentasFinanzas from './pages/VentasFinanzas';
-import Reportes from './pages/Reportes';
-import Facturas from './pages/Facturas';
-import Asistencias from './pages/Asistencias';
+import Clientes from './pages/admin/Clientes';
+import Entrenadores from './pages/admin/Entrenadores';
+import Clases from './pages/admin/Clases';
+import Inventario from './pages/admin/Inventario';
+import VentasFinanzas from './pages/admin/VentasFinanzas';
+import Reportes from './pages/admin/Reportes';
+import Facturas from './pages/admin/Facturas';
+
 import Dashboard from './components/AdminPanel/Dashboard';
 import { authService } from './services/api';
+// Trainer Panel Components
+import EntrenadorDashboard from './pages/entrenador/EntrenadorDashboard';
+import EntrenadorClientes from './pages/entrenador/Clientes/Clientes';
+import EntrenadorClases from './pages/entrenador/Clases/Clases';
+import EntrenadorRutinas from './pages/entrenador/Rutinas/Rutinas';
+import EntrenadorMensajes from './pages/entrenador/Mensajes/Mensajes';
+import EntrenadorReportes from './pages/entrenador/Reportes/Reportes';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -44,9 +51,26 @@ function App() {
     setUser(userData);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
+  const handleLogout = async () => {
+    try {
+      // Limpiar el token del almacenamiento local
+      localStorage.removeItem('token');
+      
+      // Opcional: Si tienes un endpoint de logout en el backend, puedes hacer una llamada aquí
+      // await authService.logout();
+      
+      // Limpiar el estado del usuario
+      setUser(null);
+      
+      // Forzar una recarga completa para limpiar el estado de la aplicación
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      // Asegurarse de limpiar el estado incluso si hay un error
+      localStorage.removeItem('token');
+      setUser(null);
+      window.location.href = '/login';
+    }
   };
 
   if (loading) {
@@ -82,7 +106,16 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} />
-        <Route path="/" element={user ? <PanelLayout {...panelProps} /> : <Navigate to="/login" replace />}>
+        
+        {/* Admin Routes */}
+        <Route 
+          path="/admin" 
+          element={
+            <AdminPanel onLogout={handleLogout} user={user}>
+              <Outlet />
+            </AdminPanel>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="entrenadores" element={<Entrenadores />} />
@@ -91,8 +124,45 @@ function App() {
           <Route path="ventas-finanzas" element={<VentasFinanzas />} />
           <Route path="reportes" element={<Reportes />} />
           <Route path="facturas" element={<Facturas />} />
-          <Route path="asistencias" element={<Asistencias />} />
+          <Route path="*" element={<Navigate to="/admin" replace />} />
         </Route>
+        
+        {/* Trainer Routes */}
+        <Route 
+          path="/entrenador" 
+          element={
+            <TrainerPanel onLogout={handleLogout} user={user}>
+              <Outlet />
+            </TrainerPanel>
+          }
+        >
+          <Route index element={<EntrenadorDashboard />} />
+          <Route path="clientes" element={<EntrenadorClientes />} />
+          <Route path="clases" element={<EntrenadorClases />} />
+          <Route path="rutinas" element={<EntrenadorRutinas />} />
+          <Route path="mensajes" element={<EntrenadorMensajes />} />
+          <Route path="reportes" element={<EntrenadorReportes />} />
+          <Route path="*" element={<Navigate to="/entrenador" replace />} />
+        </Route>
+        
+        {/* Root route - Redirect based on role */}
+        <Route 
+          path="/" 
+          element={
+            user ? (
+              user.role === 'admin' ? 
+                <Navigate to="/admin" replace /> : 
+                user.role === 'trainer' ?
+                <Navigate to="/entrenador" replace /> :
+                <Navigate to="/cliente" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } 
+        />
+        
+        {/* Catch-all route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

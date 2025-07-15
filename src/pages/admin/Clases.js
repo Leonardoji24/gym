@@ -8,10 +8,10 @@ import {
   Search as SearchIcon, 
   Refresh as RefreshIcon
 } from '@mui/icons-material';
-import { getInventario } from '../services/inventarioService';
+import { getClases } from '../../services/clasesService';
 
-const Inventario = () => {
-  const [items, setItems] = useState([]);
+const Clases = () => {
+  const [clases, setClases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
@@ -24,18 +24,29 @@ const Inventario = () => {
     severity: 'success'
   });
 
-  const fetchInventario = async () => {
+  // Función para cargar las clases
+  const fetchClases = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getInventario();
-      setItems(data);
+      const data = await getClases();
+      // Mapear los datos del backend al formato esperado por la tabla
+      const clasesFormateadas = data.map(clase => ({
+        id: clase.id_clase,
+        nombre: clase.nombre || '',
+        descripcion: clase.descripcion || '',
+        horario: clase.horario || '',
+        cupoMaximo: clase.cupo_maximo || '',
+        entrenador: clase.nombre_entrenador || clase.id_entrenador || 'Sin asignar',
+        fechaCreacion: clase.fecha_creacion || new Date().toISOString().split('T')[0]
+      }));
+      setClases(clasesFormateadas);
     } catch (err) {
-      console.error('Error al cargar inventario:', err);
-      setError('No se pudo cargar el inventario.');
+      console.error('Error al cargar clases:', err);
+      setError('No se pudieron cargar las clases. Por favor, intente de nuevo.');
       setSnackbar({
         open: true,
-        message: 'Error al cargar el inventario',
+        message: 'Error al cargar las clases',
         severity: 'error'
       });
     } finally {
@@ -44,7 +55,7 @@ const Inventario = () => {
   };
 
   useEffect(() => {
-    fetchInventario();
+    fetchClases();
   }, [refresh]);
 
   const handleRefresh = () => {
@@ -67,16 +78,16 @@ const Inventario = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
-  // Filtrar inventario por término de búsqueda
-  const filteredItems = items.filter(item => 
-    Object.values(item).some(
+  // Filtrar clases por término de búsqueda
+  const filteredClases = clases.filter(clase => 
+    Object.values(clase).some(
       value => value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
   // Paginación
-  const emptyRows = rowsPerPage - Math.min(rowsPerPage, filteredItems.length - page * rowsPerPage);
-  const paginatedItems = filteredItems.slice(
+  const emptyRows = rowsPerPage - Math.min(rowsPerPage, filteredClases.length - page * rowsPerPage);
+  const paginatedClases = filteredClases.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
@@ -84,10 +95,11 @@ const Inventario = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ mb: 4 }}>
+        {/* Título arriba */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 0, mr: 2 }}>
-            <i className="bi bi-box" style={{ marginRight: 10 }}></i>
-            Inventario
+            <i className="bi bi-pencil-square" style={{ marginRight: 10 }}></i>
+            Gestión de Clases
           </Typography>
           <IconButton 
             onClick={handleRefresh} 
@@ -98,10 +110,11 @@ const Inventario = () => {
             <RefreshIcon />
           </IconButton>
         </Box>
+        {/* Buscador */}
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <SearchIcon sx={{ color: 'action.active', mr: 1 }} />
           <TextField
-            label="Buscar recurso"
+            label="Buscar clase"
             variant="outlined"
             size="small"
             value={searchTerm}
@@ -111,6 +124,7 @@ const Inventario = () => {
           />
         </Box>
       </Box>
+
       {loading ? (
         <Box display="flex" justifyContent="center" my={4}>
           <CircularProgress />
@@ -119,49 +133,43 @@ const Inventario = () => {
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
-      ) : items.length === 0 ? (
+      ) : clases.length === 0 ? (
         <Alert severity="info" sx={{ mb: 3 }}>
-          No se encontraron recursos en el inventario.
+          No se encontraron clases registradas.
         </Alert>
       ) : (
         <TableContainer component={Paper} elevation={3}>
-          <Table sx={{ minWidth: 900 }} aria-label="tabla de inventario">
+          <Table sx={{ minWidth: 650 }} aria-label="tabla de clases">
             <TableHead>
               <TableRow sx={{ backgroundColor: 'primary.main' }}>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>ID</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Nombre</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Tipo</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Cantidad</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Estado</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Proveedor</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Ubicación</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Precio Unitario</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Fecha de Registro</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Descripción</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Horario</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Cupo Máximo</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Entrenador</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Fecha de Creación</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedItems.map((item) => (
+              {paginatedClases.map((clase) => (
                 <TableRow 
-                  key={item.id}
+                  key={clase.id}
                   hover
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
-                  <TableCell>{item.id}</TableCell>
-                  <TableCell>{item.nombre}</TableCell>
-                  <TableCell>{item.tipo}</TableCell>
-                  <TableCell>{item.cantidad}</TableCell>
-                  <TableCell>{item.estado}</TableCell>
-                  <TableCell>{item.proveedor}</TableCell>
-                  <TableCell>{item.ubicacion}</TableCell>
-                  <TableCell>{item.precio_unitario}</TableCell>
-                  <TableCell>{item.fecha_registro ? new Date(item.fecha_registro).toLocaleDateString() : ''}</TableCell>
-                  <TableCell>{item.descripcion}</TableCell>
+                  <TableCell>{clase.id}</TableCell>
+                  <TableCell>{clase.nombre}</TableCell>
+                  <TableCell>{clase.descripcion}</TableCell>
+                  <TableCell>{clase.horario}</TableCell>
+                  <TableCell>{clase.cupoMaximo}</TableCell>
+                  <TableCell>{clase.entrenador}</TableCell>
+                  <TableCell>{new Date(clase.fechaCreacion).toLocaleDateString()}</TableCell>
                 </TableRow>
               ))}
               {emptyRows > 0 && (
                 <TableRow style={{ height: 53 * emptyRows }}>
-                  <TableCell colSpan={10} />
+                  <TableCell colSpan={7} />
                 </TableRow>
               )}
             </TableBody>
@@ -169,7 +177,7 @@ const Inventario = () => {
           <TablePagination
             rowsPerPageOptions={[5, 10, 25]}
             component="div"
-            count={filteredItems.length}
+            count={filteredClases.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
@@ -179,6 +187,7 @@ const Inventario = () => {
           />
         </TableContainer>
       )}
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -197,4 +206,4 @@ const Inventario = () => {
   );
 };
 
-export default Inventario;
+export default Clases;

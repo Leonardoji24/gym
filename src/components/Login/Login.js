@@ -32,7 +32,6 @@ const Login = ({ onLogin }) => {
       const roleMap = {
         'admin': 'admin',
         'entrenador': 'trainer',
-        'recepcionista': 'receptionist',
         'cliente': 'client'
       };
       

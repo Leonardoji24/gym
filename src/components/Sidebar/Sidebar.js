@@ -51,44 +51,37 @@ const Sidebar = ({
               <ul className="nav sidebar-menu flex-column" role="menu" data-accordion="false" onClick={() => { if(window.innerWidth<900) setSidebarOpen(false); }}>
                 {/* Resumen General */}
                 <li className="nav-item">
-                  <Link to="/" className="nav-link">
+                  <Link to="" className="nav-link" end>
                     <i className="nav-icon bi bi-speedometer2"></i>
                     <p>Resumen General</p>
                   </Link>
                 </li>
                 {/* Gestión de Clientes */}
                 <li className="nav-item">
-                  <Link to="/clientes" className="nav-link">
+                  <Link to="clientes" className="nav-link">
                     <i className="nav-icon bi bi-people-fill"></i>
                     <p>Gestión de Clientes</p>
                   </Link>
                 </li>
                 {/* Gestión de Entrenadores */}
                 <li className="nav-item">
-                  <Link to="/entrenadores" className="nav-link">
+                  <Link to="entrenadores" className="nav-link">
                     <i className="nav-icon bi bi-person-badge"></i>
                     <p>Gestión de Entrenadores</p>
                   </Link>
                 </li>
                 {/* Gestión de Clases */}
                 <li className="nav-item">
-                  <Link to="/clases" className="nav-link">
+                  <Link to="clases" className="nav-link">
                     <i className="nav-icon bi bi-pencil-square"></i>
                     <p>Gestión de Clases</p>
                   </Link>
                 </li>
                 {/* Inventario */}
                 <li className="nav-item">
-                  <Link to="/inventario" className="nav-link">
+                  <Link to="inventario" className="nav-link">
                     <i className="nav-icon bi bi-box"></i>
                     <p>Inventario</p>
-                  </Link>
-                </li>
-                {/* Control de Asistencias */}
-                <li className="nav-item">
-                  <Link to="/asistencias" className="nav-link">
-                    <i className="nav-icon bi bi-clipboard-check"></i>
-                    <p>Control de Asistencias</p>
                   </Link>
                 </li>
                 {/* Ventas y Finanzas */}
@@ -103,14 +96,20 @@ const Sidebar = ({
                   {finanzasOpen && (
                     <ul className="nav nav-treeview" style={{background:'#23272b',margin:0,paddingLeft:28,borderRadius:'0 0 8px 8px'}}>
                       <li className="nav-item">
-                        <Link to="/reportes" className="nav-link">
-                          <i className="nav-icon bi bi-circle"></i>
+                        <Link to="ventas-finanzas" className="nav-link">
+                          <i className="nav-icon bi bi-cash-stack"></i>
+                          <p>Ventas</p>
+                        </Link>
+                      </li>
+                      <li className="nav-item">
+                        <Link to="reportes" className="nav-link">
+                          <i className="nav-icon bi bi-graph-up"></i>
                           <p>Reportes</p>
                         </Link>
                       </li>
                       <li className="nav-item">
-                        <Link to="/facturas" className="nav-link">
-                          <i className="nav-icon bi bi-circle"></i>
+                        <Link to="facturas" className="nav-link">
+                          <i className="nav-icon bi bi-receipt"></i>
                           <p>Facturas</p>
                         </Link>
                       </li>

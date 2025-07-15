@@ -8,10 +8,10 @@ import {
   Search as SearchIcon, 
   Refresh as RefreshIcon
 } from '@mui/icons-material';
-import { getClases } from '../services/clasesService';
+import { getInventario } from '../../services/inventarioService';
 
-const Clases = () => {
-  const [clases, setClases] = useState([]);
+const Inventario = () => {
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
@@ -24,29 +24,18 @@ const Clases = () => {
     severity: 'success'
   });
 
-  // Función para cargar las clases
-  const fetchClases = async () => {
+  const fetchInventario = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getClases();
-      // Mapear los datos del backend al formato esperado por la tabla
-      const clasesFormateadas = data.map(clase => ({
-        id: clase.id_clase,
-        nombre: clase.nombre || '',
-        descripcion: clase.descripcion || '',
-        horario: clase.horario || '',
-        cupoMaximo: clase.cupo_maximo || '',
-        entrenador: clase.nombre_entrenador || clase.id_entrenador || 'Sin asignar',
-        fechaCreacion: clase.fecha_creacion || new Date().toISOString().split('T')[0]
-      }));
-      setClases(clasesFormateadas);
+      const data = await getInventario();
+      setItems(data);
     } catch (err) {
-      console.error('Error al cargar clases:', err);
-      setError('No se pudieron cargar las clases. Por favor, intente de nuevo.');
+      console.error('Error al cargar inventario:', err);
+      setError('No se pudo cargar el inventario.');
       setSnackbar({
         open: true,
-        message: 'Error al cargar las clases',
+        message: 'Error al cargar el inventario',
         severity: 'error'
       });
     } finally {
@@ -55,7 +44,7 @@ const Clases = () => {
   };
 
   useEffect(() => {
-    fetchClases();
+    fetchInventario();
   }, [refresh]);
 
   const handleRefresh = () => {
@@ -78,16 +67,16 @@ const Clases = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
-  // Filtrar clases por término de búsqueda
-  const filteredClases = clases.filter(clase => 
-    Object.values(clase).some(
+  // Filtrar inventario por término de búsqueda
+  const filteredItems = items.filter(item => 
+    Object.values(item).some(
       value => value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
   // Paginación
-  const emptyRows = rowsPerPage - Math.min(rowsPerPage, filteredClases.length - page * rowsPerPage);
-  const paginatedClases = filteredClases.slice(
+  const emptyRows = rowsPerPage - Math.min(rowsPerPage, filteredItems.length - page * rowsPerPage);
+  const paginatedItems = filteredItems.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
@@ -95,11 +84,10 @@ const Clases = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ mb: 4 }}>
-        {/* Título arriba */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 0, mr: 2 }}>
-            <i className="bi bi-pencil-square" style={{ marginRight: 10 }}></i>
-            Gestión de Clases
+            <i className="bi bi-box" style={{ marginRight: 10 }}></i>
+            Inventario
           </Typography>
           <IconButton 
             onClick={handleRefresh} 
@@ -110,11 +98,10 @@ const Clases = () => {
             <RefreshIcon />
           </IconButton>
         </Box>
-        {/* Buscador */}
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <SearchIcon sx={{ color: 'action.active', mr: 1 }} />
           <TextField
-            label="Buscar clase"
+            label="Buscar recurso"
             variant="outlined"
             size="small"
             value={searchTerm}
@@ -124,7 +111,6 @@ const Clases = () => {
           />
         </Box>
       </Box>
-
       {loading ? (
         <Box display="flex" justifyContent="center" my={4}>
           <CircularProgress />
@@ -133,43 +119,49 @@ const Clases = () => {
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
-      ) : clases.length === 0 ? (
+      ) : items.length === 0 ? (
         <Alert severity="info" sx={{ mb: 3 }}>
-          No se encontraron clases registradas.
+          No se encontraron recursos en el inventario.
         </Alert>
       ) : (
         <TableContainer component={Paper} elevation={3}>
-          <Table sx={{ minWidth: 650 }} aria-label="tabla de clases">
+          <Table sx={{ minWidth: 900 }} aria-label="tabla de inventario">
             <TableHead>
               <TableRow sx={{ backgroundColor: 'primary.main' }}>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>ID</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Nombre</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Tipo</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Cantidad</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Estado</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Proveedor</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Ubicación</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Precio Unitario</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Fecha de Registro</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Descripción</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Horario</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Cupo Máximo</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Entrenador</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Fecha de Creación</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedClases.map((clase) => (
+              {paginatedItems.map((item) => (
                 <TableRow 
-                  key={clase.id}
+                  key={item.id}
                   hover
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
-                  <TableCell>{clase.id}</TableCell>
-                  <TableCell>{clase.nombre}</TableCell>
-                  <TableCell>{clase.descripcion}</TableCell>
-                  <TableCell>{clase.horario}</TableCell>
-                  <TableCell>{clase.cupoMaximo}</TableCell>
-                  <TableCell>{clase.entrenador}</TableCell>
-                  <TableCell>{new Date(clase.fechaCreacion).toLocaleDateString()}</TableCell>
+                  <TableCell>{item.id}</TableCell>
+                  <TableCell>{item.nombre}</TableCell>
+                  <TableCell>{item.tipo}</TableCell>
+                  <TableCell>{item.cantidad}</TableCell>
+                  <TableCell>{item.estado}</TableCell>
+                  <TableCell>{item.proveedor}</TableCell>
+                  <TableCell>{item.ubicacion}</TableCell>
+                  <TableCell>{item.precio_unitario}</TableCell>
+                  <TableCell>{item.fecha_registro ? new Date(item.fecha_registro).toLocaleDateString() : ''}</TableCell>
+                  <TableCell>{item.descripcion}</TableCell>
                 </TableRow>
               ))}
               {emptyRows > 0 && (
                 <TableRow style={{ height: 53 * emptyRows }}>
-                  <TableCell colSpan={7} />
+                  <TableCell colSpan={10} />
                 </TableRow>
               )}
             </TableBody>
@@ -177,7 +169,7 @@ const Clases = () => {
           <TablePagination
             rowsPerPageOptions={[5, 10, 25]}
             component="div"
-            count={filteredClases.length}
+            count={filteredItems.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
@@ -187,7 +179,6 @@ const Clases = () => {
           />
         </TableContainer>
       )}
-
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -206,4 +197,4 @@ const Clases = () => {
   );
 };
 
-export default Clases;
+export default Inventario;

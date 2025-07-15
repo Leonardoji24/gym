@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, make_response
+from flask import Flask, jsonify, request, make_response, render_template, send_from_directory
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
@@ -16,7 +16,7 @@ app = Flask(__name__)
 # Configuración de CORS para desarrollo
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["http://localhost:3307", "http://192.168.11.136:3307"],
+        "origins": ["http://localhost:3307", "http://192.168.10.206:3307"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"],
         "supports_credentials": True,
@@ -27,7 +27,7 @@ CORS(app, resources={
 # Configuración para manejar las solicitudes OPTIONS
 @app.after_request
 def after_request(response):
-    allowed_origins = ['http://localhost:3307', 'http://192.168.11.136:3307']
+    allowed_origins = ['http://localhost:3307', 'http://192.168.10.206:3307']
     origin = request.headers.get('Origin')
     if origin in allowed_origins:
         response.headers.add('Access-Control-Allow-Origin', origin)
@@ -258,6 +258,35 @@ def test_connection():
     return jsonify({"message": "Conexión exitosa al servidor Flask"}), 200
 
 # Ruta para obtener todos los miembros
+
+@app.route('/api/miembros/proximos_a_vencer', methods=['GET'])
+@token_required
+def miembros_proximos_a_vencer(current_user):
+    try:
+        dias = int(request.args.get('dias', 7))  # Por defecto, próximos 7 días
+        hoy = datetime.now().date()
+        limite = hoy + timedelta(days=dias)
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Error al conectar a la base de datos'}), 500
+        cursor = connection.cursor(dictionary=True)
+        query = '''
+            SELECT m.* FROM miembros m
+            WHERE m.fecha_vencimiento_membresia IS NOT NULL
+              AND m.fecha_vencimiento_membresia >= %s
+              AND m.fecha_vencimiento_membresia <= %s
+              AND m.activo = 1
+            ORDER BY m.fecha_vencimiento_membresia ASC
+        '''
+        cursor.execute(query, (hoy, limite))
+        miembros = cursor.fetchall()
+        return jsonify({'miembros': miembros, 'rango': f'{hoy} a {limite}'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if 'connection' in locals() and connection and connection.is_connected():
+            cursor.close()
+            connection.close()
 @app.route('/api/miembros', methods=['GET'])
 def get_miembros():
     connection = get_db_connection()
@@ -852,10 +881,26 @@ def delete_clase(current_user, clase_id):
             cursor.close()
             connection.close()
 
+# Ruta para servir el archivo index.html
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+# Ruta para servir archivos estáticos (CSS, JS, imágenes, etc.)
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
+
 if __name__ == '__main__':
     print("Iniciando servidor en http://192.168.11.136:5000")
     print("Rutas disponibles:")
+    print("  - GET  / (Página principal)")
     print("  - POST /api/auth/login")
+    print("  - GET  /api/auth/me")
+    print("  - GET  /api/miembros")
+    print("  - POST /api/miembros")
+    print("  - GET  /api/facturas")
+    print("  - POST /api/facturas")
     print("  - GET  /api/test")
     print("  - GET  /api/miembros")
     print("  - POST /api/miembros")

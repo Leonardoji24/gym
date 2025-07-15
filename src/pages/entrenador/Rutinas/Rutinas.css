@@ -1,0 +1,168 @@
+/* Estilos para la página de Rutinas */
+.rutinas-container {
+  padding: 20px;
+}
+
+.rutinas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.rutinas-search {
+  width: 100%;
+  max-width: 400px;
+}
+
+.rutinas-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.rutinas-view-toggle {
+  margin-left: 10px;
+}
+
+/* Estilos para la vista de cuadrícula */
+.rutinas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.rutina-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  background-color: white;
+}
+
+.rutina-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.rutina-image {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  background-color: #f5f5f5;
+}
+
+.rutina-content {
+  padding: 16px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.rutina-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.rutina-description {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+  flex-grow: 1;
+}
+
+.rutina-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+}
+
+.rutina-level {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.rutina-level.beginner {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.rutina-level.intermediate {
+  background-color: #fff8e1;
+  color: #f57f17;
+}
+
+.rutina-level.advanced {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.rutina-stats {
+  display: flex;
+  gap: 12px;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.rutina-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Estilos para la vista de tabla */
+.rutinas-table {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.rutinas-table .MuiDataGrid-columnHeaders {
+  background-color: #f5f5f5;
+}
+
+.rutinas-table .MuiDataGrid-cell {
+  padding: 8px 16px;
+}
+
+.rutina-actions-cell {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .rutinas-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .rutinas-search {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .rutinas-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .rutinas-grid {
+    grid-template-columns: 1fr;
+  }
+}

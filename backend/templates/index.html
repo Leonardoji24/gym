@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Management - Backend</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: 5px;
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        .status {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .status h2 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        .status p {
+            font-size: 1.1rem;
+        }
+        .endpoints {
+            text-align: left;
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .endpoints h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        .endpoint {
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: #f9f9f9;
+            border-left: 4px solid #3498db;
+            border-radius: 3px;
+        }
+        .method {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            background-color: #3498db;
+            color: white;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 0.5rem;
+            font-size: 0.8rem;
+        }
+        .path {
+            font-family: monospace;
+            font-size: 1rem;
+        }
+        footer {
+            margin-top: 3rem;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Gimnasio XYZ - Panel de Administración</h1>
+            <p>Servidor Backend en ejecución</p>
+        </header>
+
+        <div class="status">
+            <h2>Estado del Servidor</h2>
+            <p>✅ El servidor está funcionando correctamente</p>
+        </div>
+
+        <div class="endpoints">
+            <h3>Endpoints Disponibles</h3>
+            
+            <div class="endpoint">
+                <span class="method">POST</span>
+                <span class="path">/api/auth/login</span>
+                <p>Iniciar sesión en el sistema</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span>
+                <span class="path">/api/miembros</span>
+                <p>Obtener lista de miembros</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span>
+                <span class="path">/api/facturas</span>
+                <p>Obtener lista de facturas</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span>
+                <span class="path">/api/clases</span>
+                <p>Obtener lista de clases</p>
+            </div>
+
+            <div class="endpoint">
+                <span class="method">GET</span>
+                <span class="path">/api/inventario</span>
+                <p>Obtener inventario</p>
+            </div>
+        </div>
+
+        <footer>
+            <p> 2025 Gimnasio XYZ - Todos los derechos reservados</p>
+        </footer>
+    </div>
+</body>
+</html>

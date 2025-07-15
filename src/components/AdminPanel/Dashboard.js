@@ -15,6 +15,9 @@ const formatCurrency = (amount) => {
 };
 
 const Dashboard = () => {
+  const [expiringMembers, setExpiringMembers] = useState([]);
+  const [expiringLoading, setExpiringLoading] = useState(true);
+  const [expiringError, setExpiringError] = useState(null);
   const [stats, setStats] = useState({
     trainers: 0,
     activeClasses: 0,
@@ -30,6 +33,28 @@ const Dashboard = () => {
   const [clasesLoading, setClasesLoading] = useState(true);
 
   useEffect(() => {
+    const fetchExpiringMembers = async () => {
+      setExpiringLoading(true);
+      setExpiringError(null);
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('http://localhost:5000/api/miembros/proximos_a_vencer', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!res.ok) throw new Error('Error al obtener miembros próximos a vencer');
+        const data = await res.json();
+        setExpiringMembers(data.miembros || []);
+      } catch (err) {
+        setExpiringError('No se pudo cargar la información de membresías próximas a vencer');
+        setExpiringMembers([]);
+      } finally {
+        setExpiringLoading(false);
+      }
+    };
+
+    fetchExpiringMembers();
     const fetchDashboardData = async () => {
       try {
         setStats(prev => ({ ...prev, loading: true, error: null }));
@@ -96,10 +121,6 @@ const Dashboard = () => {
     fetchClases();
   }, []);
 
-  const formatMonthYear = () => {
-    return format(new Date(), 'MMMM yyyy', { locale: es });
-  };
-
   if (stats.loading) {
     return (
       <div className="loading-container">
@@ -148,7 +169,7 @@ const Dashboard = () => {
           </div>
           <div className="admin-card income">
             <span className="card-icon"><i className="bi bi-cash-coin"></i></span>
-            <span className="card-title">Ingresos de {formatMonthYear()}</span>
+            <span className="card-title">Ingresos</span>
             <span className="card-value">{formatCurrency(stats.monthlyIncome)}</span>
             <Link to="/ventas-finanzas" className="card-btn">Ver Finanzas →</Link>
           </div>
@@ -156,16 +177,51 @@ const Dashboard = () => {
       </div>
       {/* Dashboard panels */}
       <div className="admin-panels">
-        <div className="admin-panel">
-          <div className="panel-title"><span role="img" aria-label="asistencia">📈</span> Asistencia Mensual</div>
-          <div className="panel-content">
-            <p>Gráfica de asistencia mensual se mostrará aquí</p>
-          </div>
-        </div>
-        <div className="admin-panel">
+                <div className="admin-panel">
           <div className="panel-title"><span role="img" aria-label="populares">📊</span> Clases más Populares</div>
           <div className="panel-content">
             <p>Lista de clases más populares se mostrará aquí</p>
+          </div>
+        </div>
+        <div className="admin-panel">
+          <div className="panel-title"><span role="img" aria-label="vencer">⏰</span> Membresías próximas a vencer</div>
+          <div className="panel-content" style={{flexDirection:'column',width:'100%'}}>
+            {expiringLoading ? (
+              <span>Cargando...</span>
+            ) : expiringError ? (
+              <span style={{color:'red'}}>{expiringError}</span>
+            ) : expiringMembers.length === 0 ? (
+              <span>No hay membresías próximas a vencer</span>
+            ) : (
+              <table style={{width:'100%',fontSize:'0.98rem'}}>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    
+                  </tr>
+                </thead>
+                <tbody>
+                  {expiringMembers.map(m => {
+  let bg = '';
+  if (m.fecha_vencimiento_membresia) {
+    const hoy = new Date();
+    const vencimiento = new Date(m.fecha_vencimiento_membresia);
+    const diff = (vencimiento - hoy) / (1000 * 60 * 60 * 24);
+    if (diff < 0) bg = '#f8d7da'; // rojo si ya venció
+    else if (diff <= 10) bg = '#fff3cd'; // amarillo si vence en <= 3 días
+  }
+  return (
+    <tr key={m.id} style={{backgroundColor:bg}}>
+      <td>{m.nombre}</td>
+      <td>{m.email}</td>
+      <td>{m.fecha_vencimiento_membresia ? new Date(m.fecha_vencimiento_membresia).toLocaleDateString() : 'N/A'}</td>
+    </tr>
+  );
+})}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>

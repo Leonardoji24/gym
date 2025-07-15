@@ -1,0 +1,55 @@
+.trainer-panel {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.main-content {
+  flex: 1;
+  padding: 24px;
+  margin-left: 250px; /* Same as sidebar width */
+  transition: all 0.3s ease;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+}
+
+.content-wrapper {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  min-height: calc(100vh - 120px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .main-content {
+    padding: 16px;
+  }
+  
+  .content-wrapper {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 992px) {
+  .main-content {
+    margin-left: 0;
+    padding: 16px;
+    margin-top: 60px; /* Space for mobile header */
+  }
+  
+  .content-wrapper {
+    min-height: calc(100vh - 140px);
+  }
+}
+
+/* Animation for page transitions */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.content-wrapper {
+  animation: fadeIn 0.3s ease-out forwards;
+}
