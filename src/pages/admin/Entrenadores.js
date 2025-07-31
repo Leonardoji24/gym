@@ -2,18 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { 
   Table, TableBody, TableCell, TableContainer, TableHead, 
   TableRow, Paper, TablePagination, TextField, Box, 
-  Typography, IconButton, CircularProgress, Alert, Snackbar
+  Typography, IconButton, CircularProgress, Alert, Snackbar,
+  Dialog, DialogTitle, DialogContent, DialogActions, Button as MuiButton
 } from '@mui/material';
 import { 
   Search as SearchIcon, 
   Refresh as RefreshIcon,
-  People as PeopleIcon 
+  People as PeopleIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 import { getEntrenadores } from '../../services/entrenadoresService';
 import api from '../../services/api';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import Button from '@mui/material/Button';
+import AddEntrenadorForm from '../../components/acciones/AddEntrenadorForm';
 
 const Entrenadores = () => {
   const [entrenadores, setEntrenadores] = useState([]);
@@ -29,6 +32,7 @@ const Entrenadores = () => {
     severity: 'success'
   });
   const [sHoy, setAsistenciasHoy] = useState([]);
+  const [openAddDialog, setOpenAddDialog] = useState(false);
 
 
   // Función para cargar los entrenadores
@@ -37,14 +41,20 @@ const Entrenadores = () => {
       setLoading(true);
       setError(null);
       const data = await getEntrenadores();
+      console.log('Datos de entrenadores recibidos:', data); // Para depuración
+      
       // Mapear los datos del backend al formato esperado por la tabla
-      const entrenadoresFormateados = data.map(entrenador => ({
-        id: entrenador.id_miembro,
-        nombre: `${entrenador.nombre} ${entrenador.apellido || ''}`.trim(),
-        email: entrenador.email || 'Sin correo',
-        telefono: entrenador.telefono || 'Sin teléfono',
-        fechaRegistro: entrenador.fecha_registro || new Date().toISOString().split('T')[0]
-      }));
+      const entrenadoresFormateados = data.map(entrenador => {
+        console.log('Procesando entrenador:', entrenador); // Para depuración
+        return {
+          id: entrenador.id_miembro || entrenador.id || 'N/A',
+          nombre: `${entrenador.nombre || ''} ${entrenador.apellido || ''}`.trim() || 'Nombre no disponible',
+          email: entrenador.email || 'Sin correo',
+          telefono: entrenador.telefono || 'Sin teléfono',
+          fechaRegistro: entrenador.fecha_registro || new Date().toISOString().split('T')[0]
+        };
+      });
+      
       setEntrenadores(entrenadoresFormateados);
     } catch (err) {
       console.error('Error al cargar entrenadores:', err);
@@ -74,9 +84,30 @@ const Entrenadores = () => {
     }
   };
 
-  // Verifica si el entrenador ya marcó  hoy
+  // Verifica si el entrenador ya marcó asistencia hoy
   const tieneAsistenciaHoy = (entrenadorId) => {
     return sHoy.some(a => a.miembro_id === entrenadorId);
+  };
+
+  // Abrir diálogo para agregar entrenador
+  const handleOpenAddDialog = () => {
+    setOpenAddDialog(true);
+  };
+
+  // Cerrar diálogo para agregar entrenador
+  const handleCloseAddDialog = () => {
+    setOpenAddDialog(false);
+  };
+
+  // Manejar cuando se crea un nuevo entrenador exitosamente
+  const handleTrainerCreated = () => {
+    setOpenAddDialog(false);
+    fetchEntrenadores(); // Refrescar la lista de entrenadores
+    setSnackbar({
+      open: true,
+      message: 'Entrenador registrado exitosamente',
+      severity: 'success'
+    });
   };
 
   // Marcar  para un entrenador
@@ -143,18 +174,30 @@ const Entrenadores = () => {
       <Box sx={{ mb: 4 }}>
         {/* Título arriba */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 0, mr: 2 }}>
+          <Typography variant="h4" component="h1" sx={{ mb: 0, mr: 2, flexGrow: 1 }}>
             <i className="bi bi-person-badge" style={{ marginRight: 10 }}></i>
             Gestión de Entrenadores
           </Typography>
-          <IconButton 
-            onClick={handleRefresh} 
-            color="primary" 
-            disabled={loading}
-            title="Actualizar lista"
-          >
-            <RefreshIcon />
-          </IconButton>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={handleOpenAddDialog}
+              sx={{ whiteSpace: 'nowrap' }}
+            >
+              Nuevo Entrenador
+            </Button>
+            <IconButton 
+              onClick={handleRefresh} 
+              color="primary" 
+              disabled={loading}
+              title="Actualizar lista"
+              sx={{ border: '1px solid rgba(0, 0, 0, 0.23)' }}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Box>
         </Box>
         {/* Buscador */}
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -244,6 +287,22 @@ const Entrenadores = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Diálogo para agregar nuevo entrenador */}
+      <Dialog 
+        open={openAddDialog} 
+        onClose={handleCloseAddDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Registrar Nuevo Entrenador</DialogTitle>
+        <DialogContent>
+          <AddEntrenadorForm 
+            onClose={handleCloseAddDialog} 
+            onTrainerCreated={handleTrainerCreated} 
+          />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

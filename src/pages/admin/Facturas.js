@@ -4,8 +4,30 @@ import {
   TableRow, Paper, TablePagination, TextField, Box,
   Typography, IconButton, CircularProgress, Alert, Snackbar, Button
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Receipt as ReceiptIcon, Search as SearchIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Receipt as ReceiptIcon, Search as SearchIcon, Refresh as RefreshIcon, PictureAsPdf as PdfIcon } from '@mui/icons-material';
 import { getFacturas, eliminarFactura } from '../../services/facturasService';
+
+// Cargar jsPDF y autoTable desde CDN
+const loadPdfLibrary = () => {
+  return new Promise((resolve) => {
+    if (window.jspdf && window.jspdf.jsPDF) {
+      resolve(window.jspdf.jsPDF);
+      return;
+    }
+
+    const script1 = document.createElement('script');
+    script1.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    script1.onload = () => {
+      const script2 = document.createElement('script');
+      script2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js';
+      script2.onload = () => {
+        resolve(window.jspdf.jsPDF);
+      };
+      document.head.appendChild(script2);
+    };
+    document.head.appendChild(script1);
+  });
+};
 
 const Facturas = () => {
   const [facturas, setFacturas] = useState([]);
@@ -53,6 +75,97 @@ const Facturas = () => {
     setPage(0);
   };
   const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
+
+  const exportToPdf = async (factura) => {
+    try {
+      // Validar datos de la factura
+      if (!factura || typeof factura !== 'object') {
+        throw new Error('Datos de factura no válidos');
+      }
+
+      // Cargar la biblioteca jsPDF
+      await loadPdfLibrary();
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      // Configuración inicial
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 15;
+      
+      // Título
+      doc.setFontSize(20);
+      doc.text('FACTURA', pageWidth / 2, 20, { align: 'center' });
+      
+      // Información del gimnasio
+      doc.setFontSize(10);
+      doc.text('Gimnasio FitLife', margin, 40);
+      doc.text('Dirección: Av. Principal #123', margin, 45);
+      doc.text('Teléfono: (123) 456-7890', margin, 50);
+      doc.text('Email: info@gymfitlife.com', margin, 55);
+      
+      // Información de la factura
+      doc.text(`Factura #: ${factura.id}`, 150, 40);
+      doc.text(`Fecha: ${new Date(factura.fecha).toLocaleDateString()}`, 150, 45);
+      doc.text(`Estado: ${String(factura.estado || '').toUpperCase()}`, 150, 50);
+      
+      // Información del cliente
+      doc.setFontSize(12);
+      doc.text('Cliente:', margin, 75);
+      doc.setFontSize(10);
+      doc.text(`Nombre: ${factura.miembro_nombre || 'N/A'}`, margin + 5, 80);
+      doc.text(`Email: ${factura.miembro_email || 'N/A'}`, margin + 5, 85);
+      
+      // Tabla de productos/servicios
+      const headers = [['Descripción', 'Cantidad', 'Precio', 'Total']];
+      const data = [
+        [
+          factura.concepto || 'Membresía',
+          '1',
+          `$${Number(factura.total || 0).toFixed(2)}`,
+          `$${Number(factura.total || 0).toFixed(2)}`
+        ]
+      ];
+      
+      // Usar autoTable para la tabla
+      doc.autoTable({
+        startY: 100,
+        head: headers,
+        body: data,
+        headStyles: { 
+          fillColor: [41, 128, 185],
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        styles: { 
+          fontSize: 10,
+          cellPadding: 3
+        },
+        columnStyles: {
+          0: { cellWidth: 100 },
+          1: { cellWidth: 20, halign: 'center' },
+          2: { cellWidth: 30, halign: 'right' },
+          3: { cellWidth: 30, halign: 'right' }
+        }
+      });
+      
+      // Guardar el PDF
+      doc.save(`factura-${factura.id}.pdf`);
+      
+      setSnackbar({ 
+        open: true, 
+        message: 'Factura descargada exitosamente', 
+        severity: 'success' 
+      });
+      
+    } catch (error) {
+      console.error('Error al generar el PDF:', error);
+      setSnackbar({ 
+        open: true, 
+        message: `Error al generar el PDF: ${error.message || 'Error desconocido'}`, 
+        severity: 'error' 
+      });
+    }
+  };
 
   const filteredFacturas = facturas.filter(f =>
     f.miembro_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -108,7 +221,7 @@ const Facturas = () => {
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Total</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Estado</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Método de pago</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Acciones</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold', width: '150px' }}>Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -133,12 +246,20 @@ const Facturas = () => {
                     <IconButton color="error" size="small" onClick={() => handleDelete(factura.id)} title="Eliminar">
                       <DeleteIcon />
                     </IconButton>
+                    <IconButton 
+                      color="secondary" 
+                      size="small" 
+                      onClick={() => exportToPdf(factura)}
+                      title="Descargar PDF"
+                    >
+                      <PdfIcon />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
               ))}
               {emptyRows > 0 && (
                 <TableRow style={{ height: 53 * emptyRows }}>
-                  <TableCell colSpan={9} />
+                  <TableCell colSpan={10} />
                 </TableRow>
               )}
             </TableBody>

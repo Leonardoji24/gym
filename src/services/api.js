@@ -22,6 +22,25 @@ api.interceptors.request.use(
   }
 );
 
+// Interceptor para manejar respuestas de error
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      // Token expirado o no válido
+      if (error.response.status === 401) {
+        // Limpiar el token expirado
+        localStorage.removeItem('token');
+        // Redirigir al login
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login?sessionExpired=true';
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Servicios de autenticación
 export const authService = {
   login: async (email, password) => {

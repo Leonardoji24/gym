@@ -1,20 +1,26 @@
 import React, { useState } from 'react';
 import { Modal, Box, IconButton, Tooltip } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
-import BadgeIcon from '@mui/icons-material/Badge';
 import EditIcon from '@mui/icons-material/Edit';
-import CategoryIcon from '@mui/icons-material/Category';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import AddMemberForm from './AddMemberForm';
+import AddMemberForm from './acciones/AddMemberForm';
 
 const icons = [
-  { icon: <PeopleIcon />, label: 'Miembros' },
-  { icon: <BadgeIcon />, label: 'Identificación' },
-  { icon: <EditIcon />, label: 'Editar' },
-  { icon: <CategoryIcon />, label: 'Categoría' },
-  { icon: <MonetizationOnIcon />, label: 'Pagos' },
-  { icon: <CalendarTodayIcon />, label: 'Calendario' },
+  { 
+    icon: <PeopleIcon />, 
+    label: 'Nuevo Miembro',
+    type: 'create'
+  },
+  { 
+    icon: <EditIcon />, 
+    label: 'Editar Miembro',
+    type: 'edit'
+  },
+  { 
+    icon: <MonetizationOnIcon />, 
+    label: 'Pagos',
+    type: 'payments'
+  },
 ];
 
 const style = {
@@ -30,28 +36,62 @@ const style = {
   borderRadius: 2,
 };
 
-const MemberModal = ({ onMemberCreated }) => {
+const MemberModal = ({ onMemberCreated, selectedMember, onSelectMember }) => {
   const [open, setOpen] = useState(false);
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const [mode, setMode] = useState('create'); // 'create' o 'edit'
+
+  const handleOpen = (mode) => {
+    if (mode === 'edit' && !selectedMember) {
+      // No hacer nada si no hay miembro seleccionado
+      return;
+    }
+    setMode(mode);
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    // Limpiar el miembro seleccionado al cerrar
+    if (onSelectMember) onSelectMember(null);
+  };
+
+  const handleMemberCreated = () => {
+    handleClose();
+    if (onMemberCreated) onMemberCreated();
+  };
 
   return (
     <>
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        {icons.map((item, idx) => (
-          <Tooltip title={item.label} key={item.label}>
-            <IconButton
-              onClick={handleOpen}
-              sx={{ background: '#f5f5f5', borderRadius: 2, '&:hover': { background: '#e3f2fd' } }}
-            >
-              {item.icon}
-            </IconButton>
+        {icons.map((item) => (
+          <Tooltip title={item.label} key={item.type}>
+            <span>
+              <IconButton
+                onClick={() => handleOpen(item.type)}
+                disabled={item.disabled}
+                sx={{ 
+                  background: '#f5f5f5', 
+                  borderRadius: 2, 
+                  '&:hover': { background: '#e3f2fd' },
+                  '&.Mui-disabled': {
+                    opacity: 0.5,
+                    cursor: 'not-allowed'
+                  }
+                }}
+              >
+                {item.icon}
+              </IconButton>
+            </span>
           </Tooltip>
         ))}
       </Box>
       <Modal open={open} onClose={handleClose}>
         <Box sx={style}>
-          <AddMemberForm onMemberCreated={() => { handleClose(); if (onMemberCreated) onMemberCreated(); }} />
+          <AddMemberForm 
+            memberData={mode === 'edit' ? selectedMember : null}
+            onMemberCreated={handleMemberCreated} 
+            mode={mode}
+          />
         </Box>
       </Modal>
     </>

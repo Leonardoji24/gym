@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Avatar, 
-  Grid, 
-  Card, 
+import {
+  Box,
+  Typography,
+  Paper,
+  Avatar,
+  Grid,
+  Card,
   CardContent,
   Chip,
   Tabs,
   Tab,
-  useMediaQuery
+  useMediaQuery,
+  Button,
+  useTheme
 } from '@mui/material';
 import {
   FitnessCenter as FitnessCenterIcon,
@@ -44,9 +46,9 @@ const ResumenTab = ({ cliente }) => (
             </Box>
             <Box sx={{ mb: 2 }}>
               <Typography variant="subtitle2" color="textSecondary">Estado</Typography>
-              <Chip 
-                label={cliente.estadoMembresia?.toUpperCase() || 'INACTIVO'} 
-                color={cliente.estadoMembresia === 'activo' ? 'success' : 'error'} 
+              <Chip
+                label={cliente.estadoMembresia?.toUpperCase() || 'INACTIVO'}
+                color={cliente.estadoMembresia === 'activo' ? 'success' : 'error'}
                 size="small"
                 variant="outlined"
               />
@@ -56,8 +58,12 @@ const ResumenTab = ({ cliente }) => (
               <Box display="flex" alignItems="center">
                 <TodayIcon color="action" fontSize="small" sx={{ mr: 1 }} />
                 <Typography variant="body1">
-                  {cliente.fechaVencimiento 
-                    ? new Date(cliente.fechaVencimiento).toLocaleDateString('es-ES')
+                  {cliente.fechaVencimiento
+                    ? new Date(cliente.fechaVencimiento + 'T00:00:00').toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })
                     : 'No especificado'}
                 </Typography>
               </Box>
@@ -75,10 +81,10 @@ const ResumenTab = ({ cliente }) => (
             </Box>
             {[1, 2, 3].map((item) => (
               <Box key={item} sx={{ mb: 1.5, display: 'flex', alignItems: 'center' }}>
-                <Box sx={{ 
-                  width: 40, 
-                  height: 40, 
-                  bgcolor: 'primary.light', 
+                <Box sx={{
+                  width: 40,
+                  height: 40,
+                  bgcolor: 'primary.light',
                   borderRadius: 1,
                   display: 'flex',
                   alignItems: 'center',
@@ -88,9 +94,9 @@ const ResumenTab = ({ cliente }) => (
                   <AccessTimeIcon color="primary" fontSize="small" />
                 </Box>
                 <Box>
-                  <Typography variant="subtitle2">Clase de {['Funcional', 'Spinning', 'Yoga'][item-1]}</Typography>
+                  <Typography variant="subtitle2">Clase de {['Funcional', 'Spinning', 'Yoga'][item - 1]}</Typography>
                   <Typography variant="caption" color="textSecondary">
-                    {['Lun 9:00 AM', 'Mie 7:00 PM', 'Vie 8:00 AM'][item-1]}
+                    {['Lun 9:00 AM', 'Mie 7:00 PM', 'Vie 8:00 AM'][item - 1]}
                   </Typography>
                 </Box>
               </Box>
@@ -135,13 +141,13 @@ const PerfilTab = ({ cliente }) => (
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
           <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
-            <Avatar 
-              src={cliente.foto} 
-              sx={{ 
-                width: 120, 
-                height: 120, 
+            <Avatar
+              src={cliente.foto}
+              sx={{
+                width: 120,
+                height: 120,
                 fontSize: '3rem',
-                mb: 2 
+                mb: 2
               }}
             >
               {cliente.nombre?.charAt(0)}{cliente.apellidoPaterno?.charAt(0)}
@@ -174,7 +180,7 @@ const PerfilTab = ({ cliente }) => (
             <Grid item xs={12} sm={6}>
               <Typography variant="subtitle2" color="textSecondary">Fecha de Nacimiento</Typography>
               <Typography variant="body1" gutterBottom>
-                {cliente.fechaNacimiento 
+                {cliente.fechaNacimiento
                   ? new Date(cliente.fechaNacimiento).toLocaleDateString('es-ES')
                   : 'No especificado'}
               </Typography>
@@ -260,9 +266,9 @@ const Cliente = () => {
   return (
     <Box sx={{ p: isMobile ? 1 : 3 }}>
       {/* Encabezado */}
-      <Box 
-        sx={{ 
-          display: 'flex', 
+      <Box
+        sx={{
+          display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between',
           alignItems: isMobile ? 'flex-start' : 'center',
@@ -275,14 +281,14 @@ const Cliente = () => {
             Hola, {cliente.nombre}
           </Typography>
           <Box display="flex" alignItems="center" mt={0.5}>
-            <Box 
-              sx={{ 
-                width: 12, 
-                height: 12, 
-                borderRadius: '50%', 
+            <Box
+              sx={{
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
                 bgcolor: cliente.estadoMembresia === 'activo' ? 'success.main' : 'error.main',
-                mr: 1 
-              }} 
+                mr: 1
+              }}
             />
             <Typography variant="body2" color="textSecondary">
               {cliente.estadoMembresia === 'activo' ? 'Membresía activa' : 'Membresía inactiva'}
@@ -290,16 +296,16 @@ const Cliente = () => {
           </Box>
         </Box>
         <Box display="flex" gap={1}>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             color="primary"
             startIcon={<SettingsIcon />}
             onClick={() => navigate(`/cliente/${id}/configuracion`)}
           >
             Configuración
           </Button>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             color="error"
             startIcon={<ExitToAppIcon />}
             onClick={handleLogout}
@@ -311,10 +317,10 @@ const Cliente = () => {
 
       {/* Notificaciones */}
       <Box sx={{ mb: 3 }}>
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            p: 2, 
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
             bgcolor: 'warning.light',
             display: 'flex',
             alignItems: 'center',
@@ -330,8 +336,8 @@ const Cliente = () => {
 
       {/* Pestañas */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs 
-          value={tabValue} 
+        <Tabs
+          value={tabValue}
           onChange={handleTabChange}
           variant={isMobile ? 'scrollable' : 'standard'}
           scrollButtons="auto"

@@ -26,6 +26,7 @@ const Clientes = () => {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [searchTerm, setSearchTerm] = useState('');
   const [refresh, setRefresh] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -133,11 +134,24 @@ const Clientes = () => {
   };
 
   // Filtrar clientes por término de búsqueda
-  const filteredClientes = clientes.filter(cliente => 
-    Object.values(cliente).some(
-      value => value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+  const filteredClientes = clientes.filter(cliente => {
+    // Asegurarse de que el cliente y sus propiedades existan
+    if (!cliente) return false;
+    
+    // Buscar en las propiedades relevantes
+    const searchableFields = [
+      'id',
+      'nombre',
+      'email',
+      'telefono',
+      'tipoMembresia'
+    ];
+    
+    return searchableFields.some(field => {
+      const value = cliente[field];
+      return value && value.toString().toLowerCase().includes(searchTerm.toLowerCase());
+    });
+  });
 
   // Paginación
   const emptyRows = rowsPerPage - Math.min(rowsPerPage, filteredClientes.length - page * rowsPerPage);
@@ -167,7 +181,11 @@ const Clientes = () => {
         </Box>
         {/* Botones de formularios debajo del título */}
         <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-          <MemberModal onMemberCreated={handleRefresh} />
+          <MemberModal 
+            onMemberCreated={handleRefresh} 
+            selectedMember={selectedMember}
+            onSelectMember={setSelectedMember}
+          />
         </Box>
         
         {/* Tarjeta de resumen */}
@@ -221,14 +239,44 @@ const Clientes = () => {
                   const diff = (vencimiento - hoy) / (1000 * 60 * 60 * 24);
                   highlight = diff <= 7;
                 }
+                
+                // Handle row click
+                const handleRowClick = () => {
+                  setSelectedMember(cliente);
+                };
+                
                 return (
-                  <TableRow key={cliente.id} sx={{ backgroundColor: highlight ? 'warning.light' : 'inherit' }}>
+                  <TableRow 
+                    key={cliente.id} 
+                    onClick={handleRowClick}
+                    sx={{ 
+                      backgroundColor: highlight ? 'warning.light' : 'inherit',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
+                      }
+                    }}
+                  >
                     <TableCell>{cliente.id}</TableCell>
                     <TableCell>{cliente.nombre}</TableCell>
                     <TableCell>{cliente.email}</TableCell>
                     <TableCell>{cliente.telefono}</TableCell>
-                    <TableCell>{new Date(cliente.fechaRegistro).toLocaleDateString()}</TableCell>
-                    <TableCell>{cliente.fechaVencimiento ? new Date(cliente.fechaVencimiento).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell>
+                      {new Date(cliente.fechaRegistro).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {cliente.fechaVencimiento 
+                        ? new Date(cliente.fechaVencimiento).toLocaleDateString('es-ES', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })
+                        : 'Sin fecha'}
+                    </TableCell>
                   </TableRow>
                 );
               })}

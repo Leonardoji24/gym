@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS miembros (
     telefono VARCHAR(20),
     fecha_inscripcion DATE NOT NULL,
     activo BOOLEAN DEFAULT TRUE,
-    rol_id INT NOT NULL DEFAULT 4, -- Por defecto es cliente
+    rol_id INT NOT NULL DEFAULT 3, -- Por defecto es cliente (id=3)
     password_hash VARCHAR(255), -- Para autenticación
     -- Admin
     permisos_especiales TEXT,

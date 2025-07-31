@@ -16,11 +16,23 @@ export const getEntrenadores = async () => {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
     });
-    // Filtrar solo los miembros con rol 'entrenador'
-    const entrenadores = response.data.filter(miembro => {
-      const nombreRol = miembro.rol_nombre || '';
-      return nombreRol.toLowerCase() === 'entrenador';
-    });
+    
+    // Filtrar solo los miembros con rol 'entrenador' y asegurar que tengan los campos necesarios
+    const entrenadores = response.data
+      .filter(miembro => {
+        const nombreRol = miembro.rol_nombre || '';
+        return nombreRol.toLowerCase() === 'entrenador';
+      })
+      .map(entrenador => ({
+        id_miembro: entrenador.id_miembro || entrenador.id,
+        nombre: entrenador.nombre || '',
+        apellido: entrenador.apellido || '',
+        email: entrenador.email || '',
+        telefono: entrenador.telefono || '',
+        fecha_registro: entrenador.fecha_registro || new Date().toISOString().split('T')[0]
+      }));
+      
+    console.log('Entrenadores cargados:', entrenadores);
     return entrenadores;
   } catch (error) {
     console.error('Error al obtener los entrenadores:', error);

@@ -13,31 +13,35 @@ import bcrypt
 load_dotenv()
 
 app = Flask(__name__)
-# Configuración de CORS para desarrollo
-CORS(app, resources={
-    r"/api/*": {
-        "origins": ["http://localhost:3307", "http://192.168.10.206:3307"],
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"],
-        "supports_credentials": True,
-        "expose_headers": ["Content-Type", "Authorization"]
-    }
-})
 
-# Configuración para manejar las solicitudes OPTIONS
-@app.after_request
-def after_request(response):
-    allowed_origins = ['http://localhost:3307', 'http://192.168.10.206:3307']
-    origin = request.headers.get('Origin')
-    if origin in allowed_origins:
-        response.headers.add('Access-Control-Allow-Origin', origin)
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    return response
-# Configuración de JWT
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'tu_clave_secreta_muy_segura')
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+# Configuración de la aplicación
+app.config.update(
+    # Configuración de JWT
+    SECRET_KEY=os.getenv('SECRET_KEY', 'clave_secreta_predeterminada_cambiar_en_produccion'),
+    JWT_ACCESS_TOKEN_EXPIRES=timedelta(hours=1),
+    JWT_ALGORITHM='HS256',
+    
+    # Configuración de CORS
+    CORS_ORIGINS=os.getenv('ALLOWED_ORIGINS', 'http://localhost:3000,http://192.168.10.53:3000').split(','),
+    CORS_METHODS=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    CORS_ALLOW_HEADERS=['Content-Type', 'Authorization'],
+    CORS_EXPOSE_HEADERS=['Content-Type', 'Authorization'],
+    CORS_SUPPORTS_CREDENTIALS=True
+)
+
+# Configuración de CORS
+cors = CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": app.config['CORS_ORIGINS'],
+            "methods": app.config['CORS_METHODS'],
+            "allow_headers": app.config['CORS_ALLOW_HEADERS'],
+            "expose_headers": app.config['CORS_EXPOSE_HEADERS'],
+            "supports_credentials": app.config['CORS_SUPPORTS_CREDENTIALS']
+        }
+    }
+)
 
 # Configuración de la base de datos
 def get_db_connection():
@@ -65,41 +69,77 @@ def get_db_connection():
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        # No requerir autenticación para rutas públicas
+        public_routes = ['/api/auth/login', '/api/test']
+        if request.path in public_routes:
+            return f(None, *args, **kwargs)
+            
         print("\n--- token_required iniciado ---")
         token = None
         
         # Obtener el token del header
-        if 'Authorization' in request.headers:
-            auth_header = request.headers['Authorization']
-            print(f"Authorization header: {auth_header}")
-            parts = auth_header.split()
-            if len(parts) == 2 and parts[0] == 'Bearer':
-                token = parts[1]
-                print(f"Token extraído: {token[:10]}...")  # Solo mostramos parte del token por seguridad
-            else:
-                print("Formato de Authorization header inválido")
+        auth_header = request.headers.get('Authorization', '')
+        
+        # Verificar el formato del token
+        if auth_header.startswith('Bearer '):
+            token = auth_header.split(" ")[1]
+            print(f"Token extraído: {token[:10]}...")
+        else:
+            print("Error: Formato de token inválido")
+            return jsonify({
+                'success': False,
+                'message': 'Formato de token inválido. Use: Bearer <token>'
+            }), 401
         
         if not token:
             print("Error: No se proporcionó token")
-            return jsonify({'message': 'Token no proporcionado'}), 401
+            return jsonify({
+                'success': False,
+                'message': 'Se requiere un token para acceder a este recurso',
+                'error': 'token_missing'
+            }), 401
             
         try:
-            print("Intentando decodificar el token...")
-            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
-            print(f"Token decodificado: {data}")
-            current_user = data['email']
-            print(f"Usuario extraído del token: {current_user}")
+            print("Validando token...")
+            # Decodificar el token
+            data = jwt.decode(
+                token,
+                app.config['SECRET_KEY'],
+                algorithms=['HS256'],
+                options={"verify_exp": True}
+            )
+            
+            current_user = data.get('email')
+            if not current_user:
+                raise jwt.InvalidTokenError('Email no encontrado en el token')
+                
+            print(f"Token válido para el usuario: {current_user}")
+            
         except jwt.ExpiredSignatureError:
             print("Error: Token expirado")
-            return jsonify({'message': 'Token expirado'}), 401
+            return jsonify({
+                'success': False,
+                'message': 'Token expirado',
+                'error': 'token_expired'
+            }), 401
+            
         except jwt.InvalidTokenError as e:
             print(f"Error: Token inválido - {str(e)}")
-            return jsonify({'message': 'Token inválido'}), 401
-        except Exception as e:
-            print(f"Error inesperado al decodificar token: {str(e)}")
-            return jsonify({'message': 'Error al procesar el token'}), 500
+            return jsonify({
+                'success': False,
+                'message': 'Token inválido',
+                'error': 'invalid_token'
+            }), 401
             
-        print("Token validado correctamente")
+        except Exception as e:
+            print(f"Error inesperado al validar token: {str(e)}")
+            return jsonify({
+                'success': False,
+                'message': 'Error al procesar la autenticación',
+                'error': 'authentication_error'
+            }), 500
+        
+        # Si todo está bien, continuar con la función protegida
         return f(current_user, *args, **kwargs)
     
     return decorated
@@ -130,23 +170,41 @@ def login():
             FROM miembros m 
             JOIN roles r ON m.rol_id = r.id 
             WHERE m.email = %s
-        """, (auth['email'],))
+        """, (auth['email'].lower(),))  # Convertir email a minúsculas
         
         user = cursor.fetchone()
         
         if not user:
-            return jsonify({'error': 'Usuario no encontrado'}), 404
-            
-        # Verificación temporal de contraseña en texto plano
-        print(f"Contraseña recibida: {auth['password']}")
-        print(f"Contraseña almacenada: {user['password_hash']}")
+            # No revelar si el usuario existe o no por seguridad
+            return jsonify({'error': 'Credenciales inválidas'}), 401
         
-        # Verificar si la contraseña coincide (comparación directa)
-        if auth['password'] != user['password_hash']:
-            print("Contraseña incorrecta")
-            return jsonify({'error': 'Contraseña incorrecta'}), 401
-            
-        print("Inicio de sesión exitoso (modo texto plano)")
+        # Verificar la contraseña con bcrypt
+        try:
+            # Verificar si el hash parece ser de bcrypt (debería comenzar con $2b$)
+            if not user['password_hash'].startswith('$2b$'):
+                print("Error: La contraseña no está hasheada correctamente")
+                return jsonify({
+                    'success': False,
+                    'error': 'invalid_password_format',
+                    'message': 'La contraseña no está en el formato correcto. Contacte al administrador.'
+                }), 500
+                
+            # Verificar la contraseña
+            if not bcrypt.checkpw(auth['password'].encode('utf-8'), user['password_hash'].encode('utf-8')):
+                print("Error de autenticación: contraseña incorrecta")
+                return jsonify({
+                    'success': False,
+                    'error': 'invalid_credentials',
+                    'message': 'Credenciales inválidas'
+                }), 401
+                
+        except Exception as e:
+            print(f"Error al verificar contraseña: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': 'authentication_error',
+                'message': f'Error en la autenticación: {str(e)}'
+            }), 500
         
         # Generar token JWT
         token = jwt.encode({
@@ -157,15 +215,17 @@ def login():
         # Eliminar datos sensibles
         user.pop('password_hash', None)
         
+        print(f"Inicio de sesión exitoso para el usuario: {user['email']}")
+        
         return jsonify({
             'message': 'Inicio de sesión exitoso',
             'token': token,
             'user': user
         })
         
-    except Error as e:
+    except Exception as e:
         print(f"Error en login: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Error en el servidor"}), 500
     finally:
         if connection and connection.is_connected():
             cursor.close()
@@ -220,13 +280,25 @@ def get_current_user(current_user):
             print("Advertencia: El usuario no tiene un rol definido")
             user['rol_nombre'] = 'cliente'  # Valor por defecto
         
+        # Procesar condiciones médicas si existen
+        condiciones_medicas = user.get('condiciones_medicas', '')
+        if condiciones_medicas:
+            try:
+                # Intentar convertir el string JSON a lista
+                if isinstance(condiciones_medicas, str):
+                    condiciones_medicas = json.loads(condiciones_medicas)
+            except (json.JSONDecodeError, TypeError, ValueError):
+                # Si hay un error al decodificar, dejar como está
+                pass
+        
         # Crear respuesta en el formato que espera el frontend
         user_data = {
             'id': user['id'],
             'email': user['email'],
             'nombre': user.get('nombre', ''),  # Usar get() para evitar KeyError
             'rol_nombre': user['rol_nombre'],
-            'role': role_map.get(user['rol_nombre'].lower().strip(), 'client')
+            'role': role_map.get(user['rol_nombre'].lower().strip(), 'client'),
+            'condiciones_medicas': condiciones_medicas
         }
         
         print(f"Datos de usuario a devolver: {user_data}")
@@ -303,6 +375,18 @@ def get_miembros():
         """
         cursor.execute(query)
         miembros = cursor.fetchall()
+        
+        # Procesar las condiciones médicas para cada miembro
+        for miembro in miembros:
+            if miembro.get('condiciones_medicas'):
+                try:
+                    # Intentar convertir el string JSON a lista
+                    if isinstance(miembro['condiciones_medicas'], str):
+                        miembro['condiciones_medicas'] = json.loads(miembro['condiciones_medicas'])
+                except (json.JSONDecodeError, TypeError):
+                    # Si hay un error al decodificar, dejar como está
+                    pass
+                    
         return jsonify(miembros)
     except Error as e:
         return jsonify({"error": str(e)}), 500
@@ -314,88 +398,93 @@ def get_miembros():
 # Ruta para crear un nuevo miembro
 @app.route('/api/miembros', methods=['POST'])
 def create_miembro():
-    data = request.json
-    connection = get_db_connection()
-    if not connection:
-        return jsonify({"error": "Error al conectar a la base de datos"}), 500
-    
     try:
-        cursor = connection.cursor()
+        data = request.json
+        if not data:
+            return jsonify({"error": "No se recibieron datos"}), 400
+
+        # Validar campos requeridos
+        required = ['nombre', 'email', 'password']
+        for field in required:
+            if field not in data:
+                return jsonify({"error": f"Falta el campo: {field}"}), 400
+
+        # Validar formato de email
+        if '@' not in data['email'] or '.' not in data['email'].split('@')[-1]:
+            return jsonify({"error": "Formato de correo electrónico inválido"}), 400
+
+        # Validar longitud de contraseña
+        if len(data['password']) < 6:
+            return jsonify({"error": "La contraseña debe tener al menos 6 caracteres"}), 400
+
+        # Conectar a la base de datos
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({"error": "Error de conexión a la base de datos"}), 500
+
+        cursor = conn.cursor(dictionary=True)
+
+        # Verificar si el email ya existe
+        cursor.execute("SELECT id FROM miembros WHERE email = %s", (data['email'],))
+        if cursor.fetchone():
+            return jsonify({"error": "El correo ya está registrado"}), 400
+
+        # Hashear la contraseña
+        password_hash = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt())
+
+        # Validar el rol_id
+        rol_id = data.get('rol_id', 3)  # Por defecto cliente (ID 3)
+        if rol_id not in [1, 2, 3]:
+            return jsonify({"error": "ID de rol no válido. Debe ser 1 (admin), 2 (entrenador) o 3 (cliente)"}), 400
+
+        # Insertar el nuevo miembro (solo campos obligatorios)
         query = """
-            INSERT INTO miembros (nombre, email, telefono, fecha_inscripcion, rol_id, password_hash)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO miembros (
+                nombre, email, password_hash, telefono,
+                fecha_inscripcion, activo, rol_id
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
         
-        # En una aplicación real, deberías hashear la contraseña aquí
-        password_hash = data.get('password', '')  # Esto es solo para ejemplo
-        
-        cursor.execute(query, ( 
-            data['nombre'],
-            data['email'],
-            data.get('telefono', ''),
-            data.get('fecha_inscripcion', datetime.now().date()),
-            data.get('rol_id', 4),  # Por defecto cliente
-            password_hash
-        ))
-        
-        connection.commit()
-        return jsonify({"message": "Miembro creado exitosamente"}), 201
-        
-    except Error as e:
-        connection.rollback()
-        return jsonify({"error": str(e)}), 400
-    finally:
-        if connection and connection.is_connected():
-            cursor.close()
-            connection.close()
+        valores = (
+            data['nombre'].strip(),
+            data['email'].strip().lower(),
+            password_hash,
+            data.get('telefono', '').strip(),  # Agregar el teléfono
+            datetime.now().strftime('%Y-%m-%d'),
+            True,
+            rol_id  # Usar el rol_id validado
+        )
 
-# Rutas para el manejo de asistencias
-@app.route('/api/asistencias', methods=['GET'])
-@token_required
-def get_asistencias(current_user):
-    try:
-        connection = get_db_connection()
-        if not connection:
-            return jsonify({"error": "Error al conectar a la base de datos"}), 500
-        
-        cursor = connection.cursor(dictionary=True)
-        
-        # Si es cliente, solo puede ver sus propias asistencias
-        query = """
-            SELECT a.*, m.nombre as miembro_nombre, m.email as miembro_email,
-                   u.nombre as creado_por_nombre
-            FROM asistencias a
-            JOIN miembros m ON a.miembro_id = m.id
-            LEFT JOIN miembros u ON a.creado_por = u.id
-            WHERE DATE(a.fecha_hora_entrada) = CURDATE() AND (%s = %s OR %s IN (1, 2, 3))  # Solo admin, entrenador o recepcionista pueden ver todas
-            ORDER BY a.fecha_hora_entrada DESC
-        """
-        
-        # Si es admin/entrenador/recepcionista, ver todas las asistencias
-        if current_user not in ['admin@gym.com', 'entrenador@gym.com', ]:
-            
+        cursor.execute(query, valores)
+        conn.commit()
+        miembro_id = cursor.lastrowid
 
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute("SELECT id FROM miembros WHERE email = %s", (current_user,))
-            miembro = cursor.fetchone()
-            if not miembro:
-                return jsonify({"error": "Miembro no encontrado"}), 404
-            id = miembro['id']
-            cursor.execute(query, (id, id, 0))
-        else:
-            cursor.execute(query, (0, 0, 1))
-            
-        asistencias = cursor.fetchall()
-        return jsonify(asistencias)
+        # Obtener los datos del miembro recién creado
+        cursor.execute("""
+            SELECT id, nombre, email, telefono, fecha_inscripcion, 
+                   activo, rol_id, fecha_nacimiento, genero, 
+                   direccion, tipo_membresia, fecha_vencimiento_membresia
+            FROM miembros 
+            WHERE id = %s
+        """, (miembro_id,))
         
+        nuevo_miembro = cursor.fetchone()
+
+        return jsonify({
+            "message": "Miembro registrado exitosamente",
+            "miembro": nuevo_miembro
+        }), 201
+
     except Exception as e:
-        print(f"Error al obtener asistencias: {str(e)}")
-        return jsonify({"error": "Error al obtener las asistencias"}), 500
-    finally:
-        if 'connection' in locals() and connection and connection.is_connected():
-            cursor.close()
-            connection.close()
+        if 'conn' in locals() and conn and conn.is_connected():
+            conn.rollback()
+        return jsonify({"error": str(e)}), 500
 
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals() and conn and conn.is_connected():
+            conn.close()
 
 # --- ENDPOINTS FACTURAS ---
 @app.route('/api/facturas', methods=['GET'])
@@ -534,132 +623,6 @@ def eliminar_factura(current_user, factura_id):
         if 'connection' in locals() and connection and connection.is_connected():
             cursor.close()
             connection.close()
-
-@app.route('/api/reportes/asistencias', methods=['GET'])
-@token_required
-def reporte_asistencias(current_user):
-    try:
-        fecha_inicio = request.args.get('fecha_inicio')
-        fecha_fin = request.args.get('fecha_fin')
-        connection = get_db_connection()
-        if not connection:
-            return jsonify({'error': 'Error al conectar a la base de datos'}), 500
-        cursor = connection.cursor(dictionary=True)
-
-        # Asistencias por día
-        query_dias = '''
-            SELECT DATE(fecha_hora_entrada) as fecha, COUNT(*) as cantidad
-            FROM asistencias
-            WHERE fecha_hora_entrada BETWEEN %s AND %s
-            GROUP BY DATE(fecha_hora_entrada)
-            ORDER BY fecha
-        '''
-        cursor.execute(query_dias, (fecha_inicio, fecha_fin))
-        asistenciasPorDia = cursor.fetchall()
-
-        # Distribución por tipo
-        query_tipo = '''
-            SELECT tipo_asistencia, COUNT(*) as cantidad
-            FROM asistencias
-            WHERE fecha_hora_entrada BETWEEN %s AND %s
-            GROUP BY tipo_asistencia
-        '''
-        cursor.execute(query_tipo, (fecha_inicio, fecha_fin))
-        tiposAsistencia = {row['tipo_asistencia']: row['cantidad'] for row in cursor.fetchall()}
-
-        return jsonify({
-            'asistenciasPorDia': asistenciasPorDia,
-            'tiposAsistencia': tiposAsistencia
-        })
-    except Exception as e:
-        print(f"Error en reporte_asistencias: {str(e)}")
-        return jsonify({'error': str(e)}), 400
-    finally:
-        if 'connection' in locals() and connection and connection.is_connected():
-            cursor.close()
-            connection.close()
-
-@app.route('/api/asistencias', methods=['POST'])
-@token_required
-def registrar_asistencia(current_user):
-    try:
-        data = request.json
-        connection = get_db_connection()
-        if not connection:
-            return jsonify({"error": "Error al conectar a la base de datos"}), 500
-            
-        cursor = connection.cursor()
-        
-        # Obtener ID del usuario que registra la asistencia
-        cursor.execute("SELECT id FROM miembros WHERE email = %s", (current_user,))
-        creado_por = cursor.fetchone()
-        
-        query = """
-            INSERT INTO asistencias 
-            (miembro_id, fecha_hora_entrada, tipo_asistencia, notas, creado_por)
-            VALUES (%s, %s, %s, %s, %s)
-        """
-        
-        cursor.execute(query, (
-            data['miembro_id'],
-            data.get('fecha_hora_entrada', datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
-            data.get('tipo_asistencia', 'entrenamiento'),
-            data.get('notas', ''),
-            creado_por['id'] if creado_por else None
-        ))
-        
-        connection.commit()
-        return jsonify({"message": "Asistencia registrada exitosamente"}), 201
-        
-    except Exception as e:
-        connection.rollback()
-        print(f"Error al registrar asistencia: {str(e)}")
-        return jsonify({"error": str(e)}), 400
-    finally:
-        if 'connection' in locals() and connection and connection.is_connected():
-            cursor.close()
-            connection.close()
-
-@app.route('/api/asistencias/<int:asistencia_id>/salida', methods=['PUT'])
-@token_required
-def registrar_salida(current_user, asistencia_id):
-    try:
-        connection = get_db_connection()
-        if not connection:
-            return jsonify({"error": "Error al conectar a la base de datos"}), 500
-            
-        cursor = connection.cursor(dictionary=True)
-        
-        # Verificar que la asistencia existe y no tiene fecha de salida
-        cursor.execute("""
-            SELECT * FROM asistencias 
-            WHERE id = %s AND fecha_hora_salida IS NULL
-        """, (asistencia_id,))
-        
-        asistencia = cursor.fetchone()
-        if not asistencia:
-            return jsonify({"error": "Asistencia no encontrada o ya registrada la salida"}), 404
-        
-        # Actualizar la fecha de salida
-        cursor.execute("""
-            UPDATE asistencias 
-            SET fecha_hora_salida = %s 
-            WHERE id = %s
-        """, (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), asistencia_id))
-        
-        connection.commit()
-        return jsonify({"message": "Salida registrada exitosamente"})
-        
-    except Exception as e:
-        connection.rollback()
-        print(f"Error al registrar salida: {str(e)}")
-        return jsonify({"error": str(e)}), 400
-    finally:
-        if 'connection' in locals() and connection and connection.is_connected():
-            cursor.close()
-            connection.close()
-
-# --- RUTAS PARA CLASES ---
 
 # --- RUTAS PARA INVENTARIO ---
 @app.route('/api/inventario', methods=['GET'])
@@ -891,10 +854,20 @@ def index():
 def serve_static(path):
     return send_from_directory('static', path)
 
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Endpoint de verificación de salud del servidor"""
+    return jsonify({
+        "status": "ok",
+        "message": "Servidor funcionando correctamente",
+        "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    }), 200
+
 if __name__ == '__main__':
-    print("Iniciando servidor en http://192.168.11.136:5000")
+    print("Iniciando servidor en http:/192.168.10.53:5000")
     print("Rutas disponibles:")
     print("  - GET  / (Página principal)")
+    print("  - GET  /api/health (Verificar estado del servidor)")
     print("  - POST /api/auth/login")
     print("  - GET  /api/auth/me")
     print("  - GET  /api/miembros")
@@ -904,9 +877,6 @@ if __name__ == '__main__':
     print("  - GET  /api/test")
     print("  - GET  /api/miembros")
     print("  - POST /api/miembros")
-    print("  - GET  /api/asistencias")
-    print("  - POST /api/asistencias")
-    print("  - PUT  /api/asistencias/<id>/salida")
     print("  - GET  /api/clases")
     print("  - POST /api/clases")
     print("  - PUT  /api/clases/<id>")

@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Table, TableBody, TableCell, TableContainer, TableHead, 
-  TableRow, Paper, TablePagination, TextField, Box, 
-  Typography, IconButton, CircularProgress, Alert, Snackbar
+  Grid, TextField, Box, Typography, IconButton, 
+  CircularProgress, Alert, Snackbar, Button, 
+  Pagination, InputAdornment, Paper
 } from '@mui/material';
 import { 
   Search as SearchIcon, 
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 import { getClases } from '../../services/clasesService';
+import ClassCard from '../../components/cards/ClassCard';
+import { getEntrenadores } from '../../services/entrenadoresService';
+import AddClaseForm from '../../components/acciones/AddClaseForm';
+import { Dialog, DialogTitle, DialogContent } from '@mui/material';
 
 const Clases = () => {
   const [clases, setClases] = useState([]);
@@ -23,6 +28,44 @@ const Clases = () => {
     message: '',
     severity: 'success'
   });
+  const [openAddDialog, setOpenAddDialog] = useState(false);
+  const [entrenadores, setEntrenadores] = useState([]);
+  const [loadingEntrenadores, setLoadingEntrenadores] = useState(false);
+
+  // Función para cargar los entrenadores
+  const fetchEntrenadores = async () => {
+    try {
+      setLoadingEntrenadores(true);
+      const data = await getEntrenadores();
+      console.log('Datos de entrenadores recibidos en Clases:', data);
+      
+      if (!Array.isArray(data)) {
+        throw new Error('Formato de datos inválido para entrenadores');
+      }
+      
+      // Asegurarse de que los entrenadores tengan los campos requeridos
+      const entrenadoresFormateados = data.map(entrenador => ({
+        id_miembro: entrenador.id_miembro || entrenador.id,
+        nombre: entrenador.nombre || 'Sin nombre',
+        apellido: entrenador.apellido || '',
+        email: entrenador.email || 'Sin correo',
+        telefono: entrenador.telefono || 'Sin teléfono'
+      }));
+      
+      setEntrenadores(entrenadoresFormateados);
+      return entrenadoresFormateados;
+    } catch (error) {
+      console.error('Error al cargar los entrenadores:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error al cargar la lista de entrenadores',
+        severity: 'error'
+      });
+      throw error;
+    } finally {
+      setLoadingEntrenadores(false);
+    }
+  };
 
   // Función para cargar las clases
   const fetchClases = async () => {
@@ -37,7 +80,8 @@ const Clases = () => {
         descripcion: clase.descripcion || '',
         horario: clase.horario || '',
         cupoMaximo: clase.cupo_maximo || '',
-        entrenador: clase.nombre_entrenador || clase.id_entrenador || 'Sin asignar',
+        entrenador: clase.nombre_entrenador || 'Sin asignar',
+        id_entrenador: clase.id_entrenador || null,
         fechaCreacion: clase.fecha_creacion || new Date().toISOString().split('T')[0]
       }));
       setClases(clasesFormateadas);
@@ -56,6 +100,7 @@ const Clases = () => {
 
   useEffect(() => {
     fetchClases();
+    fetchEntrenadores();
   }, [refresh]);
 
   const handleRefresh = () => {
@@ -78,6 +123,45 @@ const Clases = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
+
+
+  const handleOpenAddDialog = async () => {
+    try {
+      // Cargar los entrenadores antes de abrir el diálogo
+      const entrenadoresData = await fetchEntrenadores();
+      if (entrenadoresData && entrenadoresData.length > 0) {
+        setOpenAddDialog(true);
+      } else {
+        setSnackbar({
+          open: true,
+          message: 'No hay entrenadores disponibles. Por favor, registre al menos un entrenador primero.',
+          severity: 'warning'
+        });
+      }
+    } catch (error) {
+      console.error('Error al abrir el diálogo de nueva clase:', error);
+      setSnackbar({
+        open: true,
+        message: 'No se pudo cargar la lista de entrenadores',
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleCloseAddDialog = () => {
+    setOpenAddDialog(false);
+  };
+
+  const handleClassCreated = () => {
+    setOpenAddDialog(false);
+    fetchClases(); // Refresh the classes list
+    setSnackbar({
+      open: true,
+      message: 'Clase registrada exitosamente',
+      severity: 'success'
+    });
+  };
+
   // Filtrar clases por término de búsqueda
   const filteredClases = clases.filter(clase => 
     Object.values(clase).some(
@@ -86,43 +170,73 @@ const Clases = () => {
   );
 
   // Paginación
-  const emptyRows = rowsPerPage - Math.min(rowsPerPage, filteredClases.length - page * rowsPerPage);
+  const pageCount = Math.ceil(filteredClases.length / rowsPerPage);
   const paginatedClases = filteredClases.slice(
     page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
+    (page + 1) * rowsPerPage
   );
+
+  const handleEdit = (clase) => {
+    // Implementar lógica de edición
+    console.log('Editar clase:', clase);
+  };
+
+  const handleDelete = (id) => {
+    // Implementar lógica de eliminación
+    console.log('Eliminar clase con ID:', id);
+  };
 
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ mb: 4 }}>
-        {/* Título arriba */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 0, mr: 2 }}>
-            <i className="bi bi-pencil-square" style={{ marginRight: 10 }}></i>
-            Gestión de Clases
-          </Typography>
-          <IconButton 
-            onClick={handleRefresh} 
-            color="primary" 
-            disabled={loading}
-            title="Actualizar lista"
+        {/* Título y controles */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Typography variant="h4" component="h1" sx={{ mr: 2 }}>
+              <i className="bi bi-pencil-square" style={{ marginRight: 10 }}></i>
+              Gestión de Clases
+            </Typography>
+            <IconButton 
+              onClick={handleRefresh} 
+              color="primary" 
+              disabled={loading}
+              title="Actualizar lista"
+              size="large"
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Box>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={handleOpenAddDialog}
           >
-            <RefreshIcon />
-          </IconButton>
+            Nueva Clase
+          </Button>
         </Box>
+        
         {/* Buscador */}
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <SearchIcon sx={{ color: 'action.active', mr: 1 }} />
+        <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
           <TextField
-            label="Buscar clase"
+            fullWidth
             variant="outlined"
-            size="small"
+            placeholder="Buscar clases..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ minWidth: 250 }}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setPage(0); // Resetear a la primera página al buscar
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
             disabled={loading}
           />
-        </Box>
+        </Paper>
       </Box>
 
       {loading ? (
@@ -133,59 +247,61 @@ const Clases = () => {
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
-      ) : clases.length === 0 ? (
+      ) : filteredClases.length === 0 ? (
         <Alert severity="info" sx={{ mb: 3 }}>
-          No se encontraron clases registradas.
+          No se encontraron clases que coincidan con la búsqueda.
         </Alert>
       ) : (
-        <TableContainer component={Paper} elevation={3}>
-          <Table sx={{ minWidth: 650 }} aria-label="tabla de clases">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: 'primary.main' }}>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>ID</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Nombre</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Descripción</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Horario</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Cupo Máximo</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Entrenador</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Fecha de Creación</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {paginatedClases.map((clase) => (
-                <TableRow 
-                  key={clase.id}
-                  hover
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                >
-                  <TableCell>{clase.id}</TableCell>
-                  <TableCell>{clase.nombre}</TableCell>
-                  <TableCell>{clase.descripcion}</TableCell>
-                  <TableCell>{clase.horario}</TableCell>
-                  <TableCell>{clase.cupoMaximo}</TableCell>
-                  <TableCell>{clase.entrenador}</TableCell>
-                  <TableCell>{new Date(clase.fechaCreacion).toLocaleDateString()}</TableCell>
-                </TableRow>
+        <>
+          <Grid container spacing={3}>
+            {paginatedClases.map((clase) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={clase.id}>
+                <ClassCard 
+                  clase={clase} 
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              </Grid>
+            ))}
+          </Grid>
+          
+          {/* Paginación personalizada */}
+          {pageCount > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 2 }}>
+              <Pagination
+                count={pageCount}
+                page={page + 1}
+                onChange={(event, value) => setPage(value - 1)}
+                color="primary"
+                showFirstButton
+                showLastButton
+                sx={{ '& .MuiPagination-ul': { flexWrap: 'nowrap' } }}
+              />
+            </Box>
+          )}
+          
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1, mb: 2 }}>
+            <TextField
+              select
+              size="small"
+              value={rowsPerPage}
+              onChange={(e) => {
+                setRowsPerPage(Number(e.target.value));
+                setPage(0);
+              }}
+              SelectProps={{
+                native: true,
+              }}
+              sx={{ minWidth: 120 }}
+            >
+              {[4, 8, 12, 24].map((option) => (
+                <option key={option} value={option}>
+                  {option} por página
+                </option>
               ))}
-              {emptyRows > 0 && (
-                <TableRow style={{ height: 53 * emptyRows }}>
-                  <TableCell colSpan={7} />
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={filteredClases.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            labelRowsPerPage="Filas por página:"
-            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-          />
-        </TableContainer>
+            </TextField>
+          </Box>
+        </>
       )}
 
       <Snackbar
@@ -202,6 +318,30 @@ const Clases = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Diálogo para agregar nueva clase */}
+      <Dialog 
+        open={openAddDialog} 
+        onClose={handleCloseAddDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Registrar Nueva Clase</DialogTitle>
+        <DialogContent>
+          {loadingEntrenadores ? (
+            <Box display="flex" justifyContent="center" my={4}>
+              <CircularProgress />
+              <Typography variant="body1" sx={{ ml: 2 }}>Cargando entrenadores...</Typography>
+            </Box>
+          ) : (
+            <AddClaseForm 
+              onClose={handleCloseAddDialog} 
+              onClassCreated={handleClassCreated}
+              entrenadores={entrenadores}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };
