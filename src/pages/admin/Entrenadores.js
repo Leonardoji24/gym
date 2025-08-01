@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Table, TableBody, TableCell, TableContainer, TableHead, 
-  TableRow, Paper, TablePagination, TextField, Box, 
+import {
+  Table, TableBody, TableCell, TableContainer, TableHead,
+  TableRow, Paper, TablePagination, TextField, Box,
   Typography, IconButton, CircularProgress, Alert, Snackbar,
   Dialog, DialogTitle, DialogContent, DialogActions, Button as MuiButton
 } from '@mui/material';
-import { 
-  Search as SearchIcon, 
+import {
+  Search as SearchIcon,
   Refresh as RefreshIcon,
   People as PeopleIcon,
   Add as AddIcon
@@ -41,20 +41,25 @@ const Entrenadores = () => {
       setLoading(true);
       setError(null);
       const data = await getEntrenadores();
-      console.log('Datos de entrenadores recibidos:', data); // Para depuración
-      
+      console.log('=== DATOS CRUDOS DE ENTRENADORES ===');
+      console.log('Tipo de datos:', Array.isArray(data) ? 'Array' : typeof data);
+      console.log('Primer entrenador (si existe):', data[0]);
+      console.log('Claves del primer entrenador:', data[0] ? Object.keys(data[0]) : 'No hay datos');
+
       // Mapear los datos del backend al formato esperado por la tabla
       const entrenadoresFormateados = data.map(entrenador => {
         console.log('Procesando entrenador:', entrenador); // Para depuración
         return {
-          id: entrenador.id_miembro || entrenador.id || 'N/A',
-          nombre: `${entrenador.nombre || ''} ${entrenador.apellido || ''}`.trim() || 'Nombre no disponible',
+          id: entrenador.id || 'N/A',
+          nombre: entrenador.nombre || 'Nombre no disponible',
           email: entrenador.email || 'Sin correo',
           telefono: entrenador.telefono || 'Sin teléfono',
+          especialidad: entrenador.especialidad || 'No especificada',
+          fechaContratacion: entrenador.fecha_contratacion || entrenador.fecha_registro || new Date().toISOString().split('T')[0],
           fechaRegistro: entrenador.fecha_registro || new Date().toISOString().split('T')[0]
         };
       });
-      
+
       setEntrenadores(entrenadoresFormateados);
     } catch (err) {
       console.error('Error al cargar entrenadores:', err);
@@ -156,7 +161,7 @@ const Entrenadores = () => {
   };
 
   // Filtrar entrenadores por término de búsqueda
-  const filteredEntrenadores = entrenadores.filter(entrenador => 
+  const filteredEntrenadores = entrenadores.filter(entrenador =>
     Object.values(entrenador).some(
       value => value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -188,9 +193,9 @@ const Entrenadores = () => {
             >
               Nuevo Entrenador
             </Button>
-            <IconButton 
-              onClick={handleRefresh} 
-              color="primary" 
+            <IconButton
+              onClick={handleRefresh}
+              color="primary"
               disabled={loading}
               title="Actualizar lista"
               sx={{ border: '1px solid rgba(0, 0, 0, 0.23)' }}
@@ -235,12 +240,14 @@ const Entrenadores = () => {
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Nombre</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Email</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Teléfono</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Especialidad</TableCell>
+                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Fecha de Contratación</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Fecha de Registro</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {paginatedEntrenadores.map((entrenador) => (
-                <TableRow 
+                <TableRow
                   key={entrenador.id}
                   hover
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
@@ -249,8 +256,10 @@ const Entrenadores = () => {
                   <TableCell>{entrenador.nombre}</TableCell>
                   <TableCell>{entrenador.email}</TableCell>
                   <TableCell>{entrenador.telefono}</TableCell>
+                  <TableCell>{entrenador.especialidad}</TableCell>
+                  <TableCell>{new Date(entrenador.fechaContratacion).toLocaleDateString()}</TableCell>
                   <TableCell>{new Date(entrenador.fechaRegistro).toLocaleDateString()}</TableCell>
-                  </TableRow>
+                </TableRow>
               ))}
               {emptyRows > 0 && (
                 <TableRow style={{ height: 53 * emptyRows }}>
@@ -279,9 +288,9 @@ const Entrenadores = () => {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity} 
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
           sx={{ width: '100%' }}
         >
           {snackbar.message}
@@ -289,17 +298,17 @@ const Entrenadores = () => {
       </Snackbar>
 
       {/* Diálogo para agregar nuevo entrenador */}
-      <Dialog 
-        open={openAddDialog} 
+      <Dialog
+        open={openAddDialog}
         onClose={handleCloseAddDialog}
         maxWidth="md"
         fullWidth
       >
         <DialogTitle>Registrar Nuevo Entrenador</DialogTitle>
         <DialogContent>
-          <AddEntrenadorForm 
-            onClose={handleCloseAddDialog} 
-            onTrainerCreated={handleTrainerCreated} 
+          <AddEntrenadorForm
+            onClose={handleCloseAddDialog}
+            onTrainerCreated={handleTrainerCreated}
           />
         </DialogContent>
       </Dialog>

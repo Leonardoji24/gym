@@ -120,7 +120,11 @@ const AddMemberForm = ({ onMemberCreated, memberData = null, mode = 'create' }) 
       // Actualizar la fecha de vencimiento cuando cambia el tipo de membresía
       const hoy = new Date();
       const fechaVencimiento = new Date(hoy);
-      fechaVencimiento.setDate(hoy.getDate() + duracionMembresia[value]);
+      fechaVencimiento.setDate(hoy.getDate() + (duracionMembresia[value] || 30));
+
+      console.log('Cambiando tipo de membresía a:', value);
+      console.log('Duración en días:', duracionMembresia[value]);
+      console.log('Nueva fecha de vencimiento:', fechaVencimiento);
 
       setForm(prev => ({
         ...prev,
@@ -200,20 +204,23 @@ const AddMemberForm = ({ onMemberCreated, memberData = null, mode = 'create' }) 
     setSuccess('');
 
     if (!validateForm()) {
+      console.log('Validación fallida');
       return;
     }
 
     setLoading(true);
 
     try {
-      // Asegurar que la fecha de inscripción sea un objeto Date válido
-      const fechaInscripcion = form.fecha_inscripcion ?
-        (form.fecha_inscripcion instanceof Date ? form.fecha_inscripcion : new Date(form.fecha_inscripcion)) :
-        new Date();
+      // Calcular fecha de vencimiento si no está establecida
+      let fechaVencimiento = form.fecha_vencimiento_membresia;
 
-      // Validar que la fecha sea válida
-      if (isNaN(fechaInscripcion.getTime())) {
-        throw new Error('La fecha de inscripción no es válida');
+      // Si hay un tipo de membresía pero no hay fecha de vencimiento, calcularla
+      if (!fechaVencimiento && form.tipo_membresia) {
+        const diasDuracion = duracionMembresia[form.tipo_membresia];
+        if (diasDuracion) {
+          fechaVencimiento = addDays(new Date(), diasDuracion);
+          console.log('Fecha de vencimiento calculada:', fechaVencimiento);
+        }
       }
 
       // Preparar los datos para enviar al backend
@@ -221,7 +228,9 @@ const AddMemberForm = ({ onMemberCreated, memberData = null, mode = 'create' }) 
         nombre: form.nombre.trim(),
         email: form.email.trim().toLowerCase(),
         telefono: form.telefono.trim(),
-        fecha_inscripcion: format(fechaInscripcion, 'yyyy-MM-dd'),
+        fecha_inscripcion: form.fecha_inscripcion ?
+          format(new Date(form.fecha_inscripcion), 'yyyy-MM-dd') :
+          format(new Date(), 'yyyy-MM-dd'),
         activo: form.activo,
         rol_id: form.rol_id,
         password: form.password,
@@ -233,12 +242,9 @@ const AddMemberForm = ({ onMemberCreated, memberData = null, mode = 'create' }) 
         condiciones_medicas: Array.isArray(form.condiciones_medicas) ? form.condiciones_medicas :
           (form.condiciones_medicas ? [form.condiciones_medicas.trim()] : []),
         observaciones: form.observaciones.trim(),
-        // Calcular fecha de vencimiento basada en el tipo de membresía
-        fecha_vencimiento_membresia: form.tipo_membresia ?
-          format(
-            addDays(new Date(), duracionMembresia[form.tipo_membresia] || 30),
-            'yyyy-MM-dd'
-          ) : null
+        fecha_vencimiento_membresia: fechaVencimiento 
+          ? format(new Date(fechaVencimiento), 'yyyy-MM-dd')
+          : null,
       };
 
           // Only include password if it's being set or changed
@@ -266,13 +272,25 @@ const AddMemberForm = ({ onMemberCreated, memberData = null, mode = 'create' }) 
 
       const data = await response.json();
 
+      console.log('=== RESPUESTA DEL SERVIDOR ===');
+      console.log('Estado de la respuesta:', response.status, response.statusText);
+      console.log('Datos de la respuesta:', data);
+
       if (!response.ok) {
         // Intentar obtener el mensaje de error del backend
         const errorMessage = data.error || data.message || 'Error desconocido';
+        console.error('Error en la respuesta del servidor:', errorMessage);
         throw new Error(`Error ${response.status}: ${errorMessage}`);
       }
 
-      console.log('Respuesta del servidor:', data);
+      // Mostrar información relevante del miembro creado/actualizado
+      if (data.miembro) {
+        console.log('=== INFORMACIÓN DEL MIEMBRO ===');
+        console.log('ID:', data.miembro.id);
+        console.log('Nombre:', data.miembro.nombre);
+        console.log('Tipo de membresía:', data.miembro.tipo_membresia);
+        console.log('Fecha de vencimiento:', data.miembro.fecha_vencimiento_membresia);
+      }
 
       // Mostrar mensaje de éxito
       setSuccess('¡Cliente registrado exitosamente!');
@@ -665,10 +683,12 @@ const AddMemberForm = ({ onMemberCreated, memberData = null, mode = 'create' }) 
                     {...params}
                     fullWidth
                     size="medium"
-                    helperText="Se calculará automáticamente según el tipo de membresía"
+                    helperText={form.tipo_membresia ? 
+                      `Vencimiento: ${format(new Date(form.fecha_vencimiento_membresia), 'dd/MM/yyyy')}` : 
+                      'Seleccione un tipo de membresía primero'}
                   />
                 )}
-                disabled
+                readOnly
               />
             </Grid>
 

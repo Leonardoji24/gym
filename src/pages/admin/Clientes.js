@@ -40,17 +40,35 @@ const Clientes = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getClientes();
-    console.log('DEBUG respuesta de getClientes:', data);
+      const response = await getClientes();
+      console.log('DEBUG - Respuesta completa de la API:', response);
+      
+      // Asegurarse de que response es un array
+      const data = Array.isArray(response) ? response : [response];
+      console.log('DEBUG - Datos procesados:', data);
+      
       // Mapear los datos del backend al formato esperado por la tabla
-      const clientesFormateados = data.map(cliente => ({
-        id: cliente.id,
-        nombre: `${cliente.nombre} ${cliente.apellido || ''}`.trim(),
-        email: cliente.email || 'Sin correo',
-        telefono: cliente.telefono || 'Sin teléfono',
-        fechaRegistro: cliente.fecha_registro || new Date().toISOString().split('T')[0],
-        fechaVencimiento: cliente.fecha_vencimiento_membresia || null
-      }));
+      const clientesFormateados = data.map((cliente, index) => {
+        console.log(`\nDEBUG - Cliente #${index + 1}:`, cliente);
+        console.log('Claves del objeto cliente:', Object.keys(cliente));
+        console.log('¿Tiene teléfono?', 'telefono' in cliente, 'Valor:', cliente.telefono);
+        console.log('¿Tiene fecha_vencimiento_membresia?', 'fecha_vencimiento_membresia' in cliente, 'Valor:', cliente.fecha_vencimiento_membresia);
+        
+        return {
+          id: cliente.id,
+          nombre: `${cliente.nombre || ''} ${cliente.apellido || ''}`.trim(),
+          email: cliente.email || 'Sin correo',
+          telefono: cliente.telefono || 'Sin teléfono',
+          // Asegurarse de que la fecha de registro se maneje correctamente
+          fechaRegistro: cliente.fecha_registro || cliente.fechaRegistro || new Date().toISOString(),
+          // Asegurarse de que la fecha de vencimiento se maneje correctamente
+          fechaVencimiento: cliente.fecha_vencimiento_membresia || cliente.fechaVencimiento || null,
+          // Incluir tipo de membresía si está disponible
+          tipoMembresia: cliente.tipoMembresia || 'No especificada'
+        };
+      });
+      
+      console.log('Clientes formateados:', clientesFormateados); // Debug log
       setClientes(clientesFormateados);
     } catch (err) {
       console.error('Error al cargar clientes:', err);

@@ -21,16 +21,24 @@ export const getEntrenadores = async () => {
     const entrenadores = response.data
       .filter(miembro => {
         const nombreRol = miembro.rol_nombre || '';
-        return nombreRol.toLowerCase() === 'entrenador';
+        const esEntrenador = (miembro.rol_id === 2) || (nombreRol.toLowerCase() === 'entrenador');
+        return esEntrenador;
       })
-      .map(entrenador => ({
-        id_miembro: entrenador.id_miembro || entrenador.id,
-        nombre: entrenador.nombre || '',
-        apellido: entrenador.apellido || '',
-        email: entrenador.email || '',
-        telefono: entrenador.telefono || '',
-        fecha_registro: entrenador.fecha_registro || new Date().toISOString().split('T')[0]
-      }));
+      .map(entrenador => {
+        console.log('Procesando entrenador:', entrenador); // Para depuración
+        return {
+          ...entrenador,  // Incluir todas las propiedades del objeto original
+          id: entrenador.id || entrenador.id_miembro,  // Asegurar que el ID esté presente
+          id_miembro: entrenador.id_miembro || entrenador.id,
+          nombre: entrenador.nombre || '',
+          apellido: entrenador.apellido || '',
+          email: entrenador.email || '',
+          telefono: entrenador.telefono || '',
+          especialidad: entrenador.especialidad || 'No especificada',
+          fecha_registro: entrenador.fecha_registro || entrenador.fecha_inscripcion || new Date().toISOString().split('T')[0],
+          fecha_contratacion: entrenador.fecha_contratacion || entrenador.fecha_inscripcion || entrenador.fecha_registro
+        };
+      });
       
     console.log('Entrenadores cargados:', entrenadores);
     return entrenadores;

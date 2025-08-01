@@ -369,7 +369,13 @@ def get_miembros():
         cursor = connection.cursor(dictionary=True)
         # Realizar JOIN con la tabla roles para obtener el nombre del rol
         query = """
-            SELECT m.*, r.nombre as rol_nombre 
+            SELECT 
+                m.id, m.nombre, m.email, m.telefono, m.fecha_inscripcion,
+                m.activo, m.rol_id, m.password_hash, m.permisos_especiales,
+                m.fecha_nacimiento, m.genero, m.direccion, m.tipo_membresia,
+                m.fecha_vencimiento_membresia, m.especialidad, m.horario_trabajo,
+                m.certificaciones, m.fecha_creacion, m.fecha_actualizacion,
+                r.nombre as rol_nombre 
             FROM miembros m
             LEFT JOIN roles r ON m.rol_id = r.id
         """
@@ -432,27 +438,51 @@ def create_miembro():
         # Hashear la contraseña
         password_hash = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt())
 
+        # Validar fecha de vencimiento si está presente
+        fecha_vencimiento = data.get('fecha_vencimiento_membresia')
+        if fecha_vencimiento:
+            try:
+                # Validar formato de fecha
+                datetime.strptime(fecha_vencimiento, '%Y-%m-%d')
+                # Convertir a None si está vacío
+                if not fecha_vencimiento.strip():
+                    fecha_vencimiento = None
+            except (ValueError, AttributeError):
+                return jsonify({"error": "Formato de fecha_vencimiento_membresia inválido. Use YYYY-MM-DD."}), 400
+
         # Validar el rol_id
         rol_id = data.get('rol_id', 3)  # Por defecto cliente (ID 3)
         if rol_id not in [1, 2, 3]:
             return jsonify({"error": "ID de rol no válido. Debe ser 1 (admin), 2 (entrenador) o 3 (cliente)"}), 400
 
-        # Insertar el nuevo miembro (solo campos obligatorios)
+        # Validar especialidad para entrenadores
+        especialidad = None
+        if rol_id == 2:  # Si es entrenador
+            especialidad = data.get('especialidad')
+            if not especialidad or not str(especialidad).strip():
+                return jsonify({"error": "La especialidad es requerida para entrenadores"}), 400
+            especialidad = especialidad.strip()
+
+        # Insertar el nuevo miembro
         query = """
             INSERT INTO miembros (
                 nombre, email, password_hash, telefono,
-                fecha_inscripcion, activo, rol_id
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                fecha_inscripcion, activo, rol_id, fecha_vencimiento_membresia,
+                especialidad,tipo_membresia,
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         
         valores = (
             data['nombre'].strip(),
             data['email'].strip().lower(),
             password_hash,
-            data.get('telefono', '').strip(),  # Agregar el teléfono
+            data.get('telefono', '').strip(),
             datetime.now().strftime('%Y-%m-%d'),
             True,
-            rol_id  # Usar el rol_id validado
+            rol_id,
+            data.get('fecha_vencimiento_membresia', None) or None,
+            especialidad,
+            data.get('tipo_membresia', 'mensual')   
         )
 
         cursor.execute(query, valores)
@@ -463,7 +493,8 @@ def create_miembro():
         cursor.execute("""
             SELECT id, nombre, email, telefono, fecha_inscripcion, 
                    activo, rol_id, fecha_nacimiento, genero, 
-                   direccion, tipo_membresia, fecha_vencimiento_membresia
+                   direccion, tipo_membresia, fecha_vencimiento_membresia,
+                   especialidad
             FROM miembros 
             WHERE id = %s
         """, (miembro_id,))
@@ -655,14 +686,13 @@ def create_inventario(current_user):
         cursor = connection.cursor()
         query = '''
             INSERT INTO inventario (nombre, tipo, cantidad, descripcion, fecha_registro, estado, proveedor, ubicacion, precio_unitario)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, CURDATE(), %s, %s, %s, %s)
         '''
         cursor.execute(query, (
             data['nombre'],
             data['tipo'],
             data.get('cantidad', 0),
             data.get('descripcion', ''),
-            data.get('fecha_registro', None) or None,
             data.get('estado', 'activo'),
             data.get('proveedor', ''),
             data.get('ubicacion', ''),
