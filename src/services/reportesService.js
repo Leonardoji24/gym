@@ -1,3 +1,8 @@
 import api from './api';
 
-// Puedes agregar más servicios para otros reportes (ingresos, membresías, etc.)
+// Obtener miembros activos
+export const getMiembrosActivos = async () => {
+  const response = await api.get('/miembros/activos');
+  return response.data.miembros_activos || [];
+};
+

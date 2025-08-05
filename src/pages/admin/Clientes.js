@@ -64,7 +64,7 @@ const Clientes = () => {
           // Asegurarse de que la fecha de vencimiento se maneje correctamente
           fechaVencimiento: cliente.fecha_vencimiento_membresia || cliente.fechaVencimiento || null,
           // Incluir tipo de membresía si está disponible
-          tipoMembresia: cliente.tipoMembresia || 'No especificada'
+          tipoMembresia: cliente.tipoMembresia || cliente.tipo_membresia || 'No especificada'
         };
       });
       
@@ -245,6 +245,7 @@ const Clientes = () => {
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Teléfono</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Fecha de Registro</TableCell>
                 <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Vence</TableCell>
+<TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Tipo de Membresía</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -286,15 +287,26 @@ const Clientes = () => {
                         year: 'numeric',
                       })}
                     </TableCell>
-                    <TableCell>
-                      {cliente.fechaVencimiento 
-                        ? new Date(cliente.fechaVencimiento).toLocaleDateString('es-ES', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                          })
-                        : 'Sin fecha'}
-                    </TableCell>
+                    <TableCell
+  sx={() => {
+    if (!cliente.fechaVencimiento) return { backgroundColor: 'inherit' };
+    const hoy = new Date();
+    const vencimiento = new Date(cliente.fechaVencimiento);
+    const diff = (vencimiento - hoy) / (1000 * 60 * 60 * 24);
+    if (diff < 0) return { backgroundColor: '#ffcccc', color: '#b71c1c', fontWeight: 'bold' }; // Rojo: vencido
+    if (diff <= 7) return { backgroundColor: '#fff9c4', color: '#bfa600', fontWeight: 'bold' }; // Amarillo: por vencer
+    return { backgroundColor: '#c8e6c9', color: '#256029', fontWeight: 'bold' }; // Verde: al día
+  }}
+>
+  {cliente.fechaVencimiento
+    ? new Date(cliente.fechaVencimiento).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
+    : 'Sin fecha'}
+</TableCell>
+                    <TableCell>{cliente.tipoMembresia}</TableCell>
                   </TableRow>
                 );
               })}

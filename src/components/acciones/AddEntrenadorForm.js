@@ -54,7 +54,7 @@ const AddEntrenadorForm = ({ onClose, onTrainerCreated }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!form.nombre?.trim()) newErrors.nombre = 'El nombre es requerido';
     if (!form.apellido?.trim()) newErrors.apellido = 'El apellido es requerido';
     if (!form.email?.trim()) newErrors.email = 'El email es requerido';
@@ -90,16 +90,16 @@ const AddEntrenadorForm = ({ onClose, onTrainerCreated }) => {
       };
 
       const response = await api.post('/miembros', trainerData);
-      
+
       setSuccess('Entrenador registrado exitosamente');
       if (onTrainerCreated) onTrainerCreated();
-      
+
       // Reset form after successful submission
       setTimeout(() => {
         setForm(initialState);
         if (onClose) onClose();
       }, 1500);
-      
+
     } catch (err) {
       console.error('Error al registrar entrenador:', err);
       const errorMessage = err.response?.data?.message || 'Error al registrar el entrenador';
@@ -110,7 +110,26 @@ const AddEntrenadorForm = ({ onClose, onTrainerCreated }) => {
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      noValidate
+      sx={{
+        mt: 2,
+        background: '#fff',
+        borderRadius: 3,
+        boxShadow: 8,
+        maxWidth: 800,
+        mx: 'auto',
+        p: { xs: 2, sm: 4 },
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      }}
+    >
+      <Typography variant="h5" align="center" sx={{ mb: 3, fontWeight: 'bold', color: 'primary.main', letterSpacing: 1 }}>
+        Registrar Nuevo Entrenador
+      </Typography>
       <Grid container spacing={2}>
         <Grid item xs={12} sm={6}>
           <TextField

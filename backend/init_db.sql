@@ -172,3 +172,5 @@ CREATE TABLE IF NOT EXISTS facturas (
 INSERT INTO facturas (miembro_id, fecha, total, concepto, estado, metodo_pago, notas) VALUES
 (4, CURDATE() - INTERVAL 5 DAY, 500.00, 'Membresía mensual', 'pagada', 'efectivo', 'Pago realizado en mostrador'),
 (4, CURDATE() - INTERVAL 1 DAY, 600.00, 'Membresía mensual', 'pendiente', 'tarjeta', 'Pago pendiente de confirmación');
+
+ALTER TABLE miembros ADD COLUMN observaciones TEXT;

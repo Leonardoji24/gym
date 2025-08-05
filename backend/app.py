@@ -30,18 +30,7 @@ app.config.update(
 )
 
 # Configuración de CORS
-cors = CORS(
-    app,
-    resources={
-        r"/api/*": {
-            "origins": app.config['CORS_ORIGINS'],
-            "methods": app.config['CORS_METHODS'],
-            "allow_headers": app.config['CORS_ALLOW_HEADERS'],
-            "expose_headers": app.config['CORS_EXPOSE_HEADERS'],
-            "supports_credentials": app.config['CORS_SUPPORTS_CREDENTIALS']
-        }
-    }
-)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Configuración de la base de datos
 def get_db_connection():
@@ -402,6 +391,68 @@ def get_miembros():
             connection.close()
 
 # Ruta para crear un nuevo miembro
+
+# Ruta para actualizar un miembro existente
+from flask import json
+
+@app.route('/api/miembros/<int:miembro_id>', methods=['PUT'])
+@token_required
+def update_miembro(current_user, miembro_id):
+    try:
+        data = request.json
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Error al conectar a la base de datos'}), 500
+        cursor = connection.cursor(dictionary=True)
+
+        # Construir la consulta de actualización
+        query = '''
+            UPDATE miembros SET
+                nombre=%s,
+                email=%s,
+                telefono=%s,
+                fecha_inscripcion=%s,
+                activo=%s,
+                rol_id=%s,
+                fecha_nacimiento=%s,
+                genero=%s,
+                direccion=%s,
+                tipo_membresia=%s,
+                fecha_vencimiento_membresia=%s,
+                condiciones_medicas=%s,
+                observaciones=%s
+            WHERE id=%s
+        '''
+        condiciones_medicas = data.get('condiciones_medicas')
+        if condiciones_medicas is not None and not isinstance(condiciones_medicas, str):
+            condiciones_medicas = json.dumps(condiciones_medicas, ensure_ascii=False)
+
+        cursor.execute(query, (
+            data.get('nombre'),
+            data.get('email'),
+            data.get('telefono'),
+            data.get('fecha_inscripcion'),
+            data.get('activo', True),
+            data.get('rol_id', 3),
+            data.get('fecha_nacimiento'),
+            data.get('genero'),
+            data.get('direccion'),
+            data.get('tipo_membresia'),
+            data.get('fecha_vencimiento_membresia'),
+            condiciones_medicas,
+            data.get('observaciones'),
+            miembro_id
+        ))
+        connection.commit()
+        return jsonify({'message': 'Miembro actualizado correctamente'}), 200
+    except Exception as e:
+        if 'connection' in locals() and connection and connection.is_connected():
+            connection.rollback()
+        return jsonify({'error': str(e)}), 400
+    finally:
+        if 'connection' in locals() and connection and connection.is_connected():
+            cursor.close()
+            connection.close()
 @app.route('/api/miembros', methods=['POST'])
 def create_miembro():
     try:
@@ -468,7 +519,7 @@ def create_miembro():
             INSERT INTO miembros (
                 nombre, email, password_hash, telefono,
                 fecha_inscripcion, activo, rol_id, fecha_vencimiento_membresia,
-                especialidad,tipo_membresia,
+                especialidad,tipo_membresia
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         
@@ -853,6 +904,31 @@ def update_clase(current_user, clase_id):
             cursor.close()
             connection.close()
 
+@app.route('/api/miembros/activos', methods=['GET'])
+@token_required
+def get_miembros_activos(current_user):
+    try:
+        connection = get_db_connection()
+        if not connection:
+            return jsonify({'error': 'Error al conectar a la base de datos'}), 500
+        cursor = connection.cursor(dictionary=True)
+        query = '''
+            SELECT id, nombre, email, telefono, tipo_membresia, fecha_vencimiento_membresia
+            FROM miembros
+            WHERE activo = 1 AND (fecha_vencimiento_membresia IS NOT NULL AND fecha_vencimiento_membresia >= CURDATE())
+        '''
+        cursor.execute(query)
+        miembros = cursor.fetchall()
+        return jsonify({'miembros_activos': miembros}), 200
+    except Exception as e:
+        if 'connection' in locals() and connection and connection.is_connected():
+            connection.rollback()
+        return jsonify({'error': str(e)}), 400
+    finally:
+        if 'connection' in locals() and connection and connection.is_connected():
+            cursor.close()
+            connection.close()
+
 @app.route('/api/clases/<int:clase_id>', methods=['DELETE'])
 @token_required
 def delete_clase(current_user, clase_id):
@@ -878,6 +954,13 @@ def delete_clase(current_user, clase_id):
 @app.route('/')
 def index():
     return render_template('index.html')
+
+# --- ENDPOINT DE INGRESOS MEMBRESÍAS ---
+
+# --- ENDPOINT DE REPORTE DE MEMBRESÍAS ---
+from flask import Blueprint
+
+
 
 # Ruta para servir archivos estáticos (CSS, JS, imágenes, etc.)
 @app.route('/static/<path:path>')

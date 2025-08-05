@@ -31,18 +31,35 @@ const initialState = {
   id_entrenador: ''
 };
 
-const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [] }) => {
-  const [form, setForm] = useState(initialState);
+const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [], clase = null }) => {
+  const [form, setForm] = useState(clase ? {
+    nombre: clase.nombre || '',
+    descripcion: clase.descripcion || '',
+    dia_semana: clase.horario ? clase.horario.split(' ')[0] : '',
+    hora_inicio: clase.horario ? (() => {
+      const parts = clase.horario.split(' ');
+      if (parts.length > 1) {
+        const [hour, minute] = parts[1].split(':');
+        const date = new Date();
+        date.setHours(Number(hour), Number(minute), 0, 0);
+        return date;
+      }
+      return null;
+    })() : null,
+    duracion: clase.duracion || 60,
+    cupo_maximo: clase.cupoMaximo || 20,
+    id_entrenador: clase.id_entrenador || ''
+  } : initialState);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Efecto para verificar los entrenadores cargados
   useEffect(() => {
     console.log('Entrenadores recibidos en el formulario:', entrenadores);
-    
+
     if (entrenadores && entrenadores.length > 0) {
       // Verificar que los entrenadores tengan el formato correcto
       const entrenadoresFormateados = entrenadores.map(entrenador => ({
@@ -50,7 +67,7 @@ const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [] }) => {
         nombre: entrenador.nombre || 'Sin nombre',
         apellido: entrenador.apellido || ''
       }));
-      
+
       console.log('Entrenadores formateados para el selector:', entrenadoresFormateados);
     } else {
       console.warn('No se recibieron entrenadores o el array está vacío');
@@ -71,7 +88,7 @@ const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [] }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!form.nombre?.trim()) newErrors.nombre = 'El nombre es requerido';
     if (!form.dia_semana) newErrors.dia_semana = 'El día de la semana es requerido';
     if (!form.hora_inicio) newErrors.hora_inicio = 'La hora de inicio es requerida';
@@ -97,9 +114,9 @@ const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [] }) => {
 
     try {
       // Formatear la hora para el envío al backend
-      const horaFormateada = form.hora_inicio ? 
+      const horaFormateada = form.hora_inicio ?
         form.hora_inicio.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
-      
+
       const classData = {
         nombre: form.nombre,
         descripcion: form.descripcion,
@@ -108,23 +125,28 @@ const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [] }) => {
         id_entrenador: Number(form.id_entrenador),
         duracion: Number(form.duracion)
       };
-      
+
       console.log('Datos a enviar al servidor:', classData);
 
-      const response = await api.post('/clases', classData);
-      
-      setSuccess('Clase registrada exitosamente');
+      if (clase && clase.id) {
+        // Modo edición
+        await api.put(`/clases/${clase.id}`, classData);
+        setSuccess('Clase actualizada exitosamente');
+      } else {
+        // Modo creación
+        await api.post('/clases', classData);
+        setSuccess('Clase registrada exitosamente');
+      }
       if (onClassCreated) onClassCreated();
-      
-      // Reset form after successful submission
+
       setTimeout(() => {
         setForm(initialState);
         if (onClose) onClose();
-      }, 1500);
-      
+      }, 1200);
+
     } catch (err) {
-      console.error('Error al registrar la clase:', err);
-      const errorMessage = err.response?.data?.message || 'Error al registrar la clase';
+      console.error('Error al guardar la clase:', err);
+      const errorMessage = err.response?.data?.message || 'Error al guardar la clase';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -133,12 +155,31 @@ const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [] }) => {
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      noValidate
+      sx={{
+        mt: 2,
+        background: '#fff',
+        borderRadius: 3,
+        boxShadow: 8,
+        maxWidth: 800,
+        mx: 'auto',
+        p: { xs: 2, sm: 4 },
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      }}
+    >
+      <Typography variant="h5" align="center" sx={{ mb: 3, fontWeight: 'bold', color: 'primary.main', letterSpacing: 1 }}>
+        {clase ? 'Editar Clase' : 'Registrar Nueva Clase'}
+      </Typography>
       <Grid container spacing={2}>
-        <Grid item xs={12}>
+        <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            label="Nombre de la clase"
+            label="Nombre de la clase *"
             name="nombre"
             value={form.nombre}
             onChange={handleChange}
@@ -148,8 +189,7 @@ const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [] }) => {
             required
           />
         </Grid>
-        
-        <Grid item xs={12}>
+        <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
             label="Descripción"
@@ -161,8 +201,7 @@ const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [] }) => {
             rows={3}
           />
         </Grid>
-
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           <FormControl fullWidth margin="normal" required error={!!errors.dia_semana}>
             <InputLabel>Día de la semana</InputLabel>
             <Select
@@ -182,8 +221,7 @@ const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [] }) => {
             )}
           </FormControl>
         </Grid>
-
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
             <TimePicker
               label="Hora de inicio"
@@ -202,11 +240,10 @@ const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [] }) => {
             />
           </LocalizationProvider>
         </Grid>
-
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           <TextField
             fullWidth
-            label="Duración (minutos)"
+            label="Duración (minutos) *"
             name="duracion"
             type="number"
             value={form.duracion}
@@ -218,11 +255,10 @@ const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [] }) => {
             required
           />
         </Grid>
-
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           <TextField
             fullWidth
-            label="Cupo máximo"
+            label="Cupo máximo *"
             name="cupo_maximo"
             type="number"
             value={form.cupo_maximo}
@@ -234,9 +270,8 @@ const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [] }) => {
             required
           />
         </Grid>
-
-        <Grid item xs={12}>
-          <FormControl fullWidth margin="normal" required error={!!errors.id_entrenador}>
+        <Grid item xs={12} sm={12}>
+          <FormControl fullWidth margin="normal" required error={!!errors.id_entrenador} sx={{ minWidth: 340 }}>
             <InputLabel>Entrenador</InputLabel>
             <Select
               name="id_entrenador"
@@ -258,6 +293,15 @@ const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [] }) => {
             )}
           </FormControl>
         </Grid>
+
+
+
+
+
+
+
+
+
       </Grid>
 
       {error && (
@@ -287,7 +331,9 @@ const AddClaseForm = ({ onClose, onClassCreated, entrenadores = [] }) => {
           disabled={loading || isSubmitting}
           startIcon={loading ? <CircularProgress size={20} /> : null}
         >
-          {loading ? 'Registrando...' : 'Registrar Clase'}
+          {clase
+            ? (loading ? 'Guardando...' : 'Guardar Cambios')
+            : (loading ? 'Registrando...' : 'Registrar Clase')}
         </Button>
       </Box>
     </Box>

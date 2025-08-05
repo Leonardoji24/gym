@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Grid, TextField, Box, Typography, IconButton, 
-  CircularProgress, Alert, Snackbar, Button, 
+import {
+  Grid, TextField, Box, Typography, IconButton,
+  CircularProgress, Alert, Snackbar, Button,
   Pagination, InputAdornment, Paper
 } from '@mui/material';
-import { 
-  Search as SearchIcon, 
+import {
+  Search as SearchIcon,
   Refresh as RefreshIcon,
   Add as AddIcon
 } from '@mui/icons-material';
-import { getClases } from '../../services/clasesService';
+import { getClases, deleteClase } from '../../services/clasesService';
 import ClassCard from '../../components/cards/ClassCard';
 import { getEntrenadores } from '../../services/entrenadoresService';
 import AddClaseForm from '../../components/acciones/AddClaseForm';
@@ -29,6 +29,7 @@ const Clases = () => {
     severity: 'success'
   });
   const [openAddDialog, setOpenAddDialog] = useState(false);
+const [editClase, setEditClase] = useState(null);
   const [entrenadores, setEntrenadores] = useState([]);
   const [loadingEntrenadores, setLoadingEntrenadores] = useState(false);
 
@@ -38,11 +39,11 @@ const Clases = () => {
       setLoadingEntrenadores(true);
       const data = await getEntrenadores();
       console.log('Datos de entrenadores recibidos en Clases:', data);
-      
+
       if (!Array.isArray(data)) {
         throw new Error('Formato de datos inválido para entrenadores');
       }
-      
+
       // Asegurarse de que los entrenadores tengan los campos requeridos
       const entrenadoresFormateados = data.map(entrenador => ({
         id_miembro: entrenador.id_miembro || entrenador.id,
@@ -51,7 +52,7 @@ const Clases = () => {
         email: entrenador.email || 'Sin correo',
         telefono: entrenador.telefono || 'Sin teléfono'
       }));
-      
+
       setEntrenadores(entrenadoresFormateados);
       return entrenadoresFormateados;
     } catch (error) {
@@ -75,7 +76,7 @@ const Clases = () => {
       const data = await getClases();
       // Mapear los datos del backend al formato esperado por la tabla
       const clasesFormateadas = data.map(clase => ({
-        id: clase.id_clase,
+        id: clase.id || clase.id_clase,
         nombre: clase.nombre || '',
         descripcion: clase.descripcion || '',
         horario: clase.horario || '',
@@ -154,6 +155,7 @@ const Clases = () => {
 
   const handleClassCreated = () => {
     setOpenAddDialog(false);
+    setEditClase(null);
     fetchClases(); // Refresh the classes list
     setSnackbar({
       open: true,
@@ -163,7 +165,7 @@ const Clases = () => {
   };
 
   // Filtrar clases por término de búsqueda
-  const filteredClases = clases.filter(clase => 
+  const filteredClases = clases.filter(clase =>
     Object.values(clase).some(
       value => value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -177,13 +179,28 @@ const Clases = () => {
   );
 
   const handleEdit = (clase) => {
-    // Implementar lógica de edición
-    console.log('Editar clase:', clase);
+    setEditClase(clase);
+    setOpenAddDialog(true);
   };
 
-  const handleDelete = (id) => {
-    // Implementar lógica de eliminación
-    console.log('Eliminar clase con ID:', id);
+  const handleDelete = async (id) => {
+    if (!window.confirm('¿Seguro que deseas eliminar esta clase?')) return;
+    try {
+      await deleteClase(id);
+      setSnackbar({
+        open: true,
+        message: 'Clase eliminada correctamente',
+        severity: 'success'
+      });
+      setRefresh(r => !r);
+    } catch (error) {
+      console.error('Error al eliminar la clase:', error.response ? error.response.data : error);
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.error || 'Error al eliminar la clase',
+        severity: 'error'
+      });
+    }
   };
 
   return (
@@ -196,9 +213,9 @@ const Clases = () => {
               <i className="bi bi-pencil-square" style={{ marginRight: 10 }}></i>
               Gestión de Clases
             </Typography>
-            <IconButton 
-              onClick={handleRefresh} 
-              color="primary" 
+            <IconButton
+              onClick={handleRefresh}
+              color="primary"
               disabled={loading}
               title="Actualizar lista"
               size="large"
@@ -215,7 +232,7 @@ const Clases = () => {
             Nueva Clase
           </Button>
         </Box>
-        
+
         {/* Buscador */}
         <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
           <TextField
@@ -256,15 +273,15 @@ const Clases = () => {
           <Grid container spacing={3}>
             {paginatedClases.map((clase) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={clase.id}>
-                <ClassCard 
-                  clase={clase} 
+                <ClassCard
+                  clase={clase}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />
               </Grid>
             ))}
           </Grid>
-          
+
           {/* Paginación personalizada */}
           {pageCount > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 2 }}>
@@ -279,7 +296,7 @@ const Clases = () => {
               />
             </Box>
           )}
-          
+
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1, mb: 2 }}>
             <TextField
               select
@@ -310,9 +327,9 @@ const Clases = () => {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity} 
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
           sx={{ width: '100%' }}
         >
           {snackbar.message}
@@ -320,9 +337,9 @@ const Clases = () => {
       </Snackbar>
 
       {/* Diálogo para agregar nueva clase */}
-      <Dialog 
-        open={openAddDialog} 
-        onClose={handleCloseAddDialog}
+      <Dialog
+        open={openAddDialog}
+        onClose={() => { setOpenAddDialog(false); setEditClase(null); }}
         maxWidth="md"
         fullWidth
       >
@@ -334,10 +351,12 @@ const Clases = () => {
               <Typography variant="body1" sx={{ ml: 2 }}>Cargando entrenadores...</Typography>
             </Box>
           ) : (
-            <AddClaseForm 
-              onClose={handleCloseAddDialog} 
+            <AddClaseForm
+              open={openAddDialog}
+              onClose={() => { setOpenAddDialog(false); setEditClase(null); }}
               onClassCreated={handleClassCreated}
               entrenadores={entrenadores}
+              clase={editClase}
             />
           )}
         </DialogContent>
