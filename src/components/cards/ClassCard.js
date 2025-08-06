@@ -56,26 +56,42 @@ const ClassCard = ({ clase, onEdit, onDelete }) => {
         </Box>
       </CardContent>
       
-      <Box px={3} pb={2} display="flex" justifyContent="flex-end" gap={1}>
-        <Button 
-          size="small" 
-          startIcon={<Edit />}
-          onClick={() => onEdit(clase)}
-          variant="contained"
-          sx={{ bgcolor: '#1976d2', color: '#fff', '&:hover': { bgcolor: '#115293' } }}
-        >
-          Editar
-        </Button>
-        <Button 
-          size="small" 
-          startIcon={<Delete />}
-          onClick={() => onDelete(clase.id)}
-          color="error"
-          variant="contained"
-          sx={{ color: '#fff', bgcolor: '#d32f2f', '&:hover': { bgcolor: '#9a2424' } }}
-        >
-          Eliminar
-        </Button>
+      <Box px={3} pb={2} display="flex" justifyContent="flex-end" alignItems="center">
+        <Box display="flex" gap={1}>
+          <Button 
+            size="small" 
+            startIcon={<Edit />}
+            onClick={() => onEdit(clase)}
+            variant="contained"
+            sx={{ 
+              bgcolor: '#1976d2', 
+              color: '#fff', 
+              '&:hover': { bgcolor: '#115293' },
+              textTransform: 'none',
+              fontWeight: 'medium',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          >
+            Editar
+          </Button>
+          <Button 
+            size="small" 
+            startIcon={<Delete />}
+            onClick={() => onDelete(clase.id)}
+            color="error"
+            variant="contained"
+            sx={{ 
+              color: '#fff', 
+              bgcolor: '#d32f2f', 
+              '&:hover': { bgcolor: '#9a2424' },
+              textTransform: 'none',
+              fontWeight: 'medium',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          >
+            Eliminar
+          </Button>
+        </Box>
       </Box>
     </Card>
   );

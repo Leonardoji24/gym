@@ -25,12 +25,40 @@ const EntrenadorSidebar = ({ sidebarOpen, setSidebarOpen }) => {
 
   // Cerrar el sidebar al hacer clic fuera de él
   useEffect(() => {
+    if (!sidebarOpen) return;
+
     const handleClickOutside = (event) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+      // Verificar si el clic fue fuera del sidebar y no en el botón que lo abre
+      const isClickInside = sidebarRef.current?.contains(event.target);
+      const isHamburgerButton = event.target.closest('.hamburger-button, .navbar-toggler');
+
+      if (!isClickInside && !isHamburgerButton) {
         setSidebarOpen(false);
       }
     };
 
+    // Usar 'click' en lugar de 'mousedown' para mejor compatibilidad
+    document.addEventListener('click', handleClickOutside, true);
+
+    // Limpiar el event listener cuando el componente se desmonte o el sidebar se cierre
+    return () => {
+      document.removeEventListener('click', handleClickOutside, true);
+    };
+  }, [sidebarOpen, setSidebarOpen]);
+
+  // Efecto para cerrar el sidebar al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        // Verificar si el clic fue en el botón del menú hamburguesa
+        const isHamburgerButton = event.target.closest('.hamburger-button');
+        if (!isHamburgerButton) {
+          setSidebarOpen(false);
+        }
+      }
+    };
+
+    // Agregar event listener solo si el sidebar está abierto
     if (sidebarOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
@@ -41,15 +69,12 @@ const EntrenadorSidebar = ({ sidebarOpen, setSidebarOpen }) => {
   }, [sidebarOpen, setSidebarOpen]);
 
   return (
-    <div className="sidebar-container">
-      <div 
-        ref={sidebarRef}
-        className={`entrenador-sidebar ${sidebarOpen ? 'show' : ''}`}
-      >
+    <div className={`sidebar-container ${sidebarOpen ? 'show' : ''}`}>
+      <div ref={sidebarRef} className="entrenador-sidebar">
         <div className="sidebar-header">
           <div className="sidebar-title">Entrenador</div>
-          <button 
-            className="close-sidebar" 
+          <button
+            className="close-sidebar"
             onClick={() => setSidebarOpen(false)}
             aria-label="Cerrar menú"
           >

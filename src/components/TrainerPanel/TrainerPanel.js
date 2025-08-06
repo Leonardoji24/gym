@@ -13,29 +13,42 @@ const TrainerPanel = ({ onLogout, user }) => {
   return (
     <div className="admin-layout">
       {/* Overlay para móvil */}
-      {sidebarOpen && <div className="admin-overlay" onClick={closeSidebar}></div>}
-      
+      <div 
+        className={`admin-overlay ${sidebarOpen ? 'active' : ''}`} 
+        onClick={closeSidebar}
+      ></div>
+
       <div className="trainer-panel">
-        <EntrenadorSidebar onLogout={onLogout} user={user} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        
-        <main className="main-container">
+        <EntrenadorSidebar 
+          onLogout={onLogout} 
+          user={user} 
+          sidebarOpen={sidebarOpen} 
+          setSidebarOpen={setSidebarOpen} 
+        />
+
+        <main className={`main-container ${!sidebarOpen ? 'sidebar-closed' : ''}`}>
           {/* Navbar */}
           <div className="admin-navbar fixed-navbar">
             <div className="navbar-left">
-              <button 
-                className="hamburger-button" 
-                onClick={() => setSidebarOpen(!sidebarOpen)}
+              <button
+                className="hamburger-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSidebarOpen(!sidebarOpen);
+                }}
                 aria-label="Abrir menú"
               >
                 <span />
                 <span />
                 <span />
               </button>
+              <h1 className="page-title">Panel de Entrenador</h1>
             </div>
-            
+
             <div className="navbar-user-section">
-              <button 
-                onClick={onLogout} 
+              <span className="welcome-message">Bienvenido, {user?.nombre || 'Entrenador'}</span>
+              <button
+                onClick={onLogout}
                 className="logout-button"
                 title="Cerrar sesión"
               >
@@ -44,7 +57,7 @@ const TrainerPanel = ({ onLogout, user }) => {
               </button>
             </div>
           </div>
-          
+
           <div className="content-wrapper">
             <Outlet />
           </div>

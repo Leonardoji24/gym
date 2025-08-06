@@ -29,7 +29,7 @@ const Clases = () => {
     severity: 'success'
   });
   const [openAddDialog, setOpenAddDialog] = useState(false);
-const [editClase, setEditClase] = useState(null);
+  const [editClase, setEditClase] = useState(null);
   const [entrenadores, setEntrenadores] = useState([]);
   const [loadingEntrenadores, setLoadingEntrenadores] = useState(false);
 

@@ -85,3 +85,25 @@ export const deleteClase = async (id) => {
     throw error;
   }
 };
+
+/**
+ * Obtiene las clases más populares según la asistencia
+ * @param {number} limit - Número máximo de clases a devolver (opcional, por defecto 5)
+ * @returns {Promise<Array>} Lista de clases populares con su conteo de asistencias
+ */
+export const getClasesPopulares = async (limit = 5) => {
+  try {
+    const response = await axios.get(`${API_URL}/populares`, {
+      params: { limit },
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    return response.data.data || [];
+  } catch (error) {
+    console.error('Error al obtener las clases populares:', error);
+    return [];
+  }
+};

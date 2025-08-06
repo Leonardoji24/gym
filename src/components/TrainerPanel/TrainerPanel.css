@@ -2,23 +2,183 @@
   display: flex;
   min-height: 100vh;
   background-color: #f5f7fa;
+  position: relative;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  padding-left: 250px; /* Espacio para el sidebar */
+  box-sizing: border-box;
 }
 
-.main-content {
+/* Estilos para el contenido principal */
+.main-container {
   flex: 1;
-  padding: 24px;
-  margin-left: 250px; /* Same as sidebar width */
   transition: all 0.3s ease;
   background-color: #f5f7fa;
   min-height: 100vh;
+  width: 100%;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
+/* Estilos para cuando el sidebar está cerrado */
+.main-container.sidebar-closed {
+  padding-left: 0;
+  width: 100%;
+}
+
+/* Contenedor del contenido */
 .content-wrapper {
-  background: white;
-  border-radius: 8px;
+  flex: 1;
+  background: #f5f7fa;
+  padding: 1.5rem;
+  margin: 0;
+  margin-top: 60px; /* Altura del navbar */
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s ease;
+  min-height: calc(100vh - 60px); /* Ajuste para el alto total menos el navbar */
+}
+
+/* Ajustes para móviles */
+@media (max-width: 992px) {
+  .main-container {
+    width: 100%;
+    margin-left: 0;
+  }
+  
+  .main-container {
+    width: 100%;
+    margin-left: 0;
+    transform: none;
+    transition: transform 0.3s ease;
+  }
+  
+  .main-container:not(.sidebar-closed) {
+    transform: translateX(250px);
+  }
+  
+  .admin-navbar {
+    left: 0 !important;
+    right: 0;
+    width: 100%;
+  }
+  
+  .trainer-panel:not(.sidebar-closed) .admin-navbar {
+    transform: translateX(250px);
+  }
+  
+  .content-wrapper {
+    padding: 1rem;
+    margin-top: 60px;
+  }
+}
+
+/* Estilos para el overlay en móviles */
+.admin-overlay {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 900;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.admin-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Estilos para la barra de navegación */
+.admin-navbar {
+  background: #fff;
+  padding: 0.75rem 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 24px;
-  min-height: calc(100vh - 120px);
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 250px; /* Ancho del sidebar */
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  transition: all 0.3s ease;
+  height: 60px;
+  box-sizing: border-box;
+}
+
+/* Ajuste cuando el sidebar está cerrado */
+.trainer-panel .main-container.sidebar-closed .admin-navbar {
+  left: 0;
+  width: 100%;
+}
+
+/* Ajuste para móviles */
+@media (max-width: 992px) {
+  .trainer-panel {
+    padding-left: 0;
+  }
+  
+  .admin-navbar {
+    left: 0 !important;
+    right: 0;
+    width: 100%;
+  }
+  
+  .trainer-panel:not(.sidebar-closed) .admin-navbar {
+    transform: translateX(250px);
+  }
+}
+
+/* Contenedor del botón de menú y título */
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Estilos para el botón de menú hamburguesa */
+.hamburger-button {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 36px;
+  width: 36px;
+  transition: all 0.2s ease;
+}
+
+.hamburger-button:hover {
+  background-color: #f7fafc;
+  border-color: #cbd5e0;
+}
+
+.hamburger-button span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background-color: #4a5568;
+  transition: all 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 /* Responsive adjustments */

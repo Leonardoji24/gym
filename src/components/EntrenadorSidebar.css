@@ -1,20 +1,109 @@
-.entrenador-sidebar {
-  width: 220px;
+/* Contenedor principal del sidebar */
+.sidebar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 250px;
+  z-index: 1000;
+  transition: transform 0.3s ease-in-out;
   background: #1a237e;
-  color: #fff;
-  min-height: 100vh;
-  padding: 0;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  transform: translateX(0);
+}
+
+/* Estilos del sidebar */
+.entrenador-sidebar {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 0 8px rgba(0,0,0,0.06);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #1a237e;
+  color: #fff;
 }
+
+/* Asegura que el contenido principal no se desplace */
+.main-content {
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Estilos para móviles */
+@media (max-width: 991px) {
+  .sidebar-container {
+    transform: translateX(-100%);
+    z-index: 1100;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+  }
+  
+  .sidebar-container.show {
+    transform: translateX(0);
+  }
+  
+  /* Estilos para el overlay en móviles */
+  .admin-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .admin-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  /* Asegura que el sidebar ocupe todo el alto en móviles */
+  .entrenador-sidebar {
+    height: 100vh;
+    overflow-y: auto;
+  }
+  
+  /* Ajuste para cuando el sidebar está abierto */
+  .main-content.sidebar-open {
+    transform: translateX(250px);
+  }
+}
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #283593;
+}
+
 .sidebar-title {
   font-size: 1.5rem;
   font-weight: bold;
   letter-spacing: 1px;
-  padding: 28px 0 18px 28px;
-  border-bottom: 1px solid #283593;
-  margin-bottom: 12px;
+  margin: 0;
+  color: #fff;
+}
+
+.close-sidebar {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.close-sidebar:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 .entrenador-sidebar nav ul {
   list-style: none;
