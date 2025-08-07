@@ -1,4 +1,4 @@
-/* Estilos para la página de Clientes */
+/* Estilos para la página de Clientes del Entrenador */
 .clientes-container {
   padding: 20px;
 }
@@ -72,6 +72,93 @@
   gap: 8px;
 }
 
+/* Estilos para la tabla de clientes */
+.MuiTableContainer-root {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.MuiTableHead-root .MuiTableRow-root {
+  background-color: #1976d2;
+}
+
+.MuiTableHead-root .MuiTableCell-root {
+  color: white;
+  font-weight: bold;
+  border-bottom: none;
+}
+
+.MuiTableBody-root .MuiTableRow-root:hover {
+  background-color: rgba(25, 118, 210, 0.04);
+}
+
+/* Estilos para los chips de estado */
+.MuiChip-root {
+  font-weight: 500;
+}
+
+/* Estilos para los botones de acción */
+.MuiIconButton-root {
+  transition: all 0.2s ease;
+}
+
+.MuiIconButton-root:hover {
+  transform: scale(1.1);
+}
+
+/* Estilos para las celdas de fecha de vencimiento */
+.vencimiento-vencido {
+  background-color: #ffcccc !important;
+  color: #b71c1c !important;
+  font-weight: bold !important;
+}
+
+.vencimiento-por-vencer {
+  background-color: #fff9c4 !important;
+  color: #bfa600 !important;
+  font-weight: bold !important;
+}
+
+.vencimiento-al-dia {
+  background-color: #c8e6c9 !important;
+  color: #256029 !important;
+  font-weight: bold !important;
+}
+
+/* Estilos para la tarjeta de resumen */
+.resumen-card {
+  margin-bottom: 24px;
+}
+
+.resumen-item {
+  text-align: center;
+  padding: 16px;
+}
+
+.resumen-number {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.resumen-label {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+/* Estilos para el buscador */
+.search-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.search-icon {
+  margin-right: 8px;
+  color: #666;
+}
+
+/* Estilos responsivos */
 @media (max-width: 768px) {
   .clientes-header {
     flex-direction: column;
@@ -82,5 +169,43 @@
   .clientes-search {
     width: 100%;
     max-width: 100%;
+  }
+  
+  .MuiTable-root {
+    font-size: 0.875rem;
+  }
+  
+  .MuiTableCell-root {
+    padding: 8px 4px;
+  }
+  
+  .resumen-item {
+    padding: 12px;
+  }
+  
+  .resumen-number {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .clientes-container {
+    padding: 12px;
+  }
+  
+  .MuiTable-root {
+    font-size: 0.75rem;
+  }
+  
+  .MuiTableCell-root {
+    padding: 4px 2px;
+  }
+  
+  .MuiIconButton-root {
+    padding: 4px;
+  }
+  
+  .MuiIconButton-root .MuiSvgIcon-root {
+    font-size: 1rem;
   }
 }

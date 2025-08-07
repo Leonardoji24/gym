@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import './Login.css';
+import { useAuth } from '../../contexts/AuthContext';
 
-const API_URL = process.env.REACT_APP_API_URL;
-
-const Login = ({ onLogin }) => {
+const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,32 +17,14 @@ const Login = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/auth/login`, {
-        email,
-        password
-      }, {
-        withCredentials: true
-      });
-
-      const { user, token } = response.data;
+      const result = await login({ email, password });
       
-      // Guardar el token en localStorage
-      localStorage.setItem('token', token);
-      
-      // Mapear los roles del backend a los roles del frontend
-      const roleMap = {
-        'admin': 'admin',
-        'entrenador': 'trainer',
-        'cliente': 'client'
-      };
-      
-      onLogin({
-        id: user.id,
-        email: user.email,
-        name: user.nombre,
-        role: roleMap[user.rol_nombre] || 'client',
-        token
-      });
+      if (result.success) {
+        // La navegación se manejará automáticamente por el contexto
+        // y las rutas en App.js
+      } else {
+        setError(result.error || 'Error al iniciar sesión');
+      }
       
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Error de conexión con el servidor';

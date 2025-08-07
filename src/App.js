@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import './App.css';
 import Login from './components/Login/Login';
@@ -14,64 +14,19 @@ import Reportes from './pages/admin/Reportes';
 import Facturas from './pages/admin/Facturas';
 
 import Dashboard from './components/AdminPanel/Dashboard';
-import { authService } from './services/api';
 // Trainer Panel Components
 import EntrenadorDashboard from './pages/entrenador/EntrenadorDashboard';
 import EntrenadorClientes from './pages/entrenador/Clientes/Clientes';
 import EntrenadorClases from './pages/entrenador/Clases/Clases';
 import EntrenadorRutinas from './pages/entrenador/Rutinas/Rutinas';
-import EntrenadorMensajes from './pages/entrenador/Mensajes/Mensajes';
+import NuevaRutina from './pages/entrenador/Rutinas/NuevaRutina';
+import DetalleRutina from './pages/entrenador/Rutinas/DetalleRutina';
+import AsignarRutina from './pages/entrenador/Rutinas/AsignarRutina';
 import EntrenadorReportes from './pages/entrenador/Reportes/Reportes';
+import { useAuth } from './contexts/AuthContext';
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // Verificar si hay una sesión activa al cargar la aplicación
-  useEffect(() => {
-    const verifySession = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const userData = await authService.getCurrentUser();
-          setUser(userData);
-        } catch (error) {
-          console.error('Error verificando la sesión:', error);
-          localStorage.removeItem('token');
-          setUser(null);
-        }
-      }
-      setLoading(false);
-    };
-
-    verifySession();
-  }, []);
-
-  const handleLogin = (userData) => {
-    setUser(userData);
-  };
-
-  const handleLogout = async () => {
-    try {
-      // Limpiar el token del almacenamiento local
-      localStorage.removeItem('token');
-      
-      // Opcional: Si tienes un endpoint de logout en el backend, puedes hacer una llamada aquí
-      // await authService.logout();
-      
-      // Limpiar el estado del usuario
-      setUser(null);
-      
-      // Forzar una recarga completa para limpiar el estado de la aplicación
-      window.location.href = '/login';
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-      // Asegurarse de limpiar el estado incluso si hay un error
-      localStorage.removeItem('token');
-      setUser(null);
-      window.location.href = '/login';
-    }
-  };
+  const { currentUser, loading } = useAuth();
 
   if (loading) {
     return <div className="loading">Cargando...</div>;
@@ -81,37 +36,27 @@ function App() {
   const getLayout = (role) => {
     switch (role) {
       case 'admin':
-        return (props) => <AdminPanel onLogout={handleLogout} user={user} {...props} />;
+        return (props) => <AdminPanel {...props} />;
       case 'trainer':
-        return (props) => <TrainerPanel onLogout={handleLogout} user={user} {...props} />;
+        return (props) => <TrainerPanel {...props} />;
       case 'receptionist':
       default:
-        return (props) => <ClientPanel onLogout={handleLogout} user={user} {...props} />;
+        return (props) => <ClientPanel {...props} />;
     }
   };
 
-  const PanelLayout = user ? getLayout(user.role) : null;
-
-  // Pasar las props necesarias al PanelLayout
-  const panelProps = {
-    sidebarOpen: false,
-    setSidebarOpen: () => {},
-    sidebarPinned: false,
-    setSidebarPinned: () => {},
-    sidebarHover: false,
-    setSidebarHover: () => {}
-  };
+  const PanelLayout = currentUser ? getLayout(currentUser.role) : null;
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={user ? <Navigate to="/" /> : <Login onLogin={handleLogin} />} />
+        <Route path="/login" element={currentUser ? <Navigate to="/" /> : <Login />} />
         
         {/* Admin Routes */}
         <Route 
           path="/admin" 
           element={
-            <AdminPanel onLogout={handleLogout} user={user}>
+            <AdminPanel>
               <Outlet />
             </AdminPanel>
           }
@@ -131,7 +76,7 @@ function App() {
         <Route 
           path="/entrenador" 
           element={
-            <TrainerPanel onLogout={handleLogout} user={user}>
+            <TrainerPanel>
               <Outlet />
             </TrainerPanel>
           }
@@ -140,7 +85,9 @@ function App() {
           <Route path="clientes" element={<EntrenadorClientes />} />
           <Route path="clases" element={<EntrenadorClases />} />
           <Route path="rutinas" element={<EntrenadorRutinas />} />
-          <Route path="mensajes" element={<EntrenadorMensajes />} />
+          <Route path="rutinas/nueva" element={<NuevaRutina />} />
+          <Route path="rutinas/:id" element={<DetalleRutina />} />
+          <Route path="rutinas/:id/asignar" element={<AsignarRutina />} />
           <Route path="reportes" element={<EntrenadorReportes />} />
           <Route path="*" element={<Navigate to="/entrenador" replace />} />
         </Route>
@@ -149,10 +96,10 @@ function App() {
         <Route 
           path="/" 
           element={
-            user ? (
-              user.role === 'admin' ? 
+            currentUser ? (
+              currentUser.role === 'admin' ? 
                 <Navigate to="/admin" replace /> : 
-                user.role === 'trainer' ?
+                currentUser.role === 'trainer' ?
                 <Navigate to="/entrenador" replace /> :
                 <Navigate to="/cliente" replace />
             ) : (

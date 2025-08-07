@@ -1,75 +1,59 @@
-/* Contenedor principal del sidebar */
-.sidebar-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 250px;
-  z-index: 1000;
-  transition: transform 0.3s ease-in-out;
-  background: #1a237e;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  transform: translateX(0);
+/* Navegación del entrenador */
+.entrenador-navigation {
+  width: 100%;
+  background: transparent;
 }
 
-/* Estilos del sidebar */
-.entrenador-sidebar {
-  width: 100%;
-  height: 100%;
+.entrenador-navigation nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
-  background: #1a237e;
-  color: #fff;
+  gap: 0.5rem;
 }
 
-/* Asegura que el contenido principal no se desplace */
-.main-content {
-  transition: transform 0.3s ease-in-out;
+.entrenador-navigation nav ul li {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #333;
 }
 
-/* Estilos para móviles */
-@media (max-width: 991px) {
-  .sidebar-container {
-    transform: translateX(-100%);
-    z-index: 1100;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+.entrenador-navigation nav ul li:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.entrenador-navigation nav ul li.active {
+  background-color: #4361ee;
+  color: white;
+}
+
+.entrenador-navigation nav ul li i {
+  font-size: 1.1rem;
+  width: 24px;
+  text-align: center;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+  .entrenador-navigation nav ul {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
   
-  .sidebar-container.show {
-    transform: translateX(0);
+  .entrenador-navigation nav ul li {
+    padding: 0.5rem;
+    font-size: 0.9rem;
   }
   
-  /* Estilos para el overlay en móviles */
-  .admin-overlay {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 1050;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease-in-out;
-  }
-  
-  .admin-overlay.show {
-    opacity: 1;
-    visibility: visible;
-  }
-  
-  /* Asegura que el sidebar ocupe todo el alto en móviles */
-  .entrenador-sidebar {
-    height: 100vh;
-    overflow-y: auto;
-  }
-  
-  /* Ajuste para cuando el sidebar está abierto */
-  .main-content.sidebar-open {
-    transform: translateX(250px);
+  .entrenador-navigation nav ul li i {
+    display: none;
   }
 }
 .sidebar-header {

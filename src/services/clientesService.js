@@ -8,16 +8,31 @@ const API_URL = `${API_CONFIG.BASE_URL}/miembros`;
  * @param {string} [rol='cliente'] - Rol por el cual filtrar los miembros
  * @returns {Promise<Array>} Lista de miembros que coinciden con el rol especificado
  */
-export const getClientes = async (rol = 'cliente') => {
+export const getClientes = async (rol = 'cliente', entrenadorId = null) => {
   try {
-    // Primero obtenemos todos los miembros
-    const response = await axios.get(API_URL, {
-      withCredentials: true,
+    // Obtener el token del localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No hay sesión activa');
+    }
+
+    // Configuración de la petición
+    const config = {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
+        'Authorization': `Bearer ${token}`
+      },
+      withCredentials: true
+    };
+
+    // Si se especifica un entrenadorId, obtenemos solo los clientes asignados a ese entrenador
+    if (entrenadorId) {
+      const response = await axios.get(`${API_CONFIG.BASE_URL}/api/miembros/entrenador/${entrenadorId}`, config);
+      return response.data;
+    }
+    
+    // Si no se especifica entrenadorId, obtenemos todos los clientes
+    const response = await axios.get(API_URL, config);
     
     // Si no se especifica un rol, devolvemos todos los miembros
     if (!rol) {
@@ -26,7 +41,6 @@ export const getClientes = async (rol = 'cliente') => {
     
     // Filtrar miembros por el rol especificado (insensible a mayúsculas/minúsculas)
     const miembrosFiltrados = response.data.filter(miembro => {
-      // El backend ahora devuelve rol_nombre gracias al JOIN con la tabla roles
       const nombreRol = miembro.rol_nombre || 'cliente';
       return nombreRol.toLowerCase() === rol.toLowerCase();
     });

@@ -1,34 +1,34 @@
 
 import React, { useState } from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import EntrenadorSidebar from '../EntrenadorSidebar';
 import './TrainerPanel.css';
-import '../Sidebar/Sidebar.css';
+import { useAuth } from '../../contexts/AuthContext';
 
-const TrainerPanel = ({ onLogout, user }) => {
+const TrainerPanel = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
 
-  const closeSidebar = () => setSidebarOpen(false);
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
 
   return (
-    <div className="admin-layout">
-      {/* Overlay para móvil */}
-      <div 
-        className={`admin-overlay ${sidebarOpen ? 'active' : ''}`} 
-        onClick={closeSidebar}
-      ></div>
-
+    <div className="trainer-layout">
       <div className="trainer-panel">
-        <EntrenadorSidebar 
-          onLogout={onLogout} 
-          user={user} 
-          sidebarOpen={sidebarOpen} 
-          setSidebarOpen={setSidebarOpen} 
-        />
+        <aside className="trainer-sidebar">
+          <EntrenadorSidebar />
+        </aside>
 
-        <main className={`main-container ${!sidebarOpen ? 'sidebar-closed' : ''}`}>
-          {/* Navbar */}
-          <div className="admin-navbar fixed-navbar">
+        <main className="trainer-main-content">
+          {/* Navbar simplificado */}
+          <div className="admin-navbar">
             <div className="navbar-left">
               <button
                 className="hamburger-button"
@@ -46,9 +46,9 @@ const TrainerPanel = ({ onLogout, user }) => {
             </div>
 
             <div className="navbar-user-section">
-              <span className="welcome-message">Bienvenido, {user?.nombre || 'Entrenador'}</span>
+              <span className="welcome-message">Bienvenido, {currentUser?.nombre || 'Entrenador'}</span>
               <button
-                onClick={onLogout}
+                onClick={handleLogout}
                 className="logout-button"
                 title="Cerrar sesión"
               >

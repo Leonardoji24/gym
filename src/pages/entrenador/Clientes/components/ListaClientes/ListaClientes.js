@@ -50,16 +50,6 @@ const ListaClientes = ({
       width: 150 
     },
     {
-      field: 'estadoMembresia',
-      headerName: 'Estado',
-      width: 150,
-      renderCell: (params) => {
-        const estado = params.value?.toLowerCase() || 'inactivo';
-        const color = estado === 'activo' ? 'success' : 'error';
-        return <Chip label={estado.toUpperCase()} color={color} size="small" />;
-      },
-    },
-    {
       field: 'acciones',
       headerName: 'Acciones',
       width: 150,
@@ -118,22 +108,23 @@ const ListaClientes = ({
         <DataGrid
           rows={clientes}
           columns={columns}
-          pageSize={10}
-          rowsPerPageOptions={[10, 25, 50]}
           loading={loading}
+          pageSize={10}
+          rowsPerPageOptions={[5, 10, 25]}
           disableSelectionOnClick
-          disableColumnMenu={isMobile}
+          autoHeight
           components={{
             Toolbar: GridToolbar,
           }}
           sx={{
+            '& .MuiDataGrid-cell': {
+              display: 'flex',
+              alignItems: 'center',
+            },
             '& .MuiDataGrid-columnHeaders': {
               backgroundColor: theme.palette.primary.main,
               color: theme.palette.primary.contrastText,
-            },
-            '& .MuiButton-textPrimary': {
-              color: theme.palette.primary.main,
-            },
+            }
           }}
         />
       </Box>

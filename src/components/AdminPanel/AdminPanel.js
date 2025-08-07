@@ -1,17 +1,28 @@
 import React, { useState } from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/Sidebar/Sidebar';
 import './AdminPanel.css';
 import '../../components/Sidebar/Sidebar.css';
+import { useAuth } from '../../contexts/AuthContext';
 
-const AdminPanel = ({ onLogout }) => {
+const AdminPanel = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarHover, setSidebarHover] = useState(false);
   const [sidebarPinned, setSidebarPinned] = useState(false);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   // Cierra el sidebar al hacer clic en un enlace o fondo oscuro
   const closeSidebar = () => setSidebarOpen(false);
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
 
   return (
     <div>
@@ -67,7 +78,7 @@ const AdminPanel = ({ onLogout }) => {
             ) : (
               <div className="navbar-user-section">
                 <button 
-                  onClick={onLogout} 
+                  onClick={handleLogout} 
                   className="logout-button"
                   title="Cerrar sesión"
                 >
